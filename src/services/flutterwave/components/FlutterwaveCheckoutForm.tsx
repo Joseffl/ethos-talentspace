@@ -32,7 +32,6 @@ export function FlutterwaveCheckoutForm({
 
     try {
       const paymentLink = await getFlutterwavePaymentLink(product, user)
-      // Redirect to Flutterwave payment page
       window.location.href = paymentLink
     } catch (err) {
       setError(

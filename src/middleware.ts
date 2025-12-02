@@ -72,11 +72,9 @@
 //   ],
 // }
 
-
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import arcjet, { detectBot, shield, slidingWindow } from "@arcjet/next"
 import { env } from "./data/env/server"
-import { setUserCountryHeader } from "./lib/userCountryHeader"
 import { NextResponse } from "next/server"
 
 const isPublicRoute = createRouteMatcher([
@@ -133,10 +131,7 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   if (decision && !decision.ip.isVpn() && !decision.ip.isProxy()) {
-    const headers = new Headers(req.headers)
-    setUserCountryHeader(headers, decision.ip.country)
-
-    return NextResponse.next({ request: { headers } })
+    return NextResponse.next()
   }
 })
 

@@ -1,14 +1,16 @@
-
 "use server";
 
-import { getUserCoupon } from "@/lib/userCountryHeader";
 import { env as serverEnv } from "@/data/env/server";
 import { env as clientEnv } from "@/data/env/client";
 import axios from "axios";
 
-import { ProductTable } from "@/drizzle/schema/product";
-
-type Product = typeof ProductTable.$inferSelect;
+type Product = {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  priceInDollars: number;
+};
 
 type User = {
   id: string;
@@ -16,15 +18,7 @@ type User = {
 };
 
 export async function getFlutterwavePaymentLink(product: Product, user: User) {
-  const coupon = await getUserCoupon();
-
-  let amount = product.priceInDollars;
-
-  if (coupon) {
-    amount *= 1 - (coupon.discountPercentage || 0) / 100;
-  }
-
-  amount = Math.round(amount * 100) / 100;
+  const amount = Math.round(product.priceInDollars * 100) / 100;
 
   const flutterwavePayload = {
     tx_ref: `${product.id}-${user.id}-${Date.now()}`,
