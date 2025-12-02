@@ -1,7 +1,7 @@
-CREATE TYPE "public"."course_section_status" AS ENUM('public', 'private');--> statement-breakpoint
-CREATE TYPE "public"."lesson_status" AS ENUM('public', 'private', 'preview');--> statement-breakpoint
-CREATE TYPE "public"."product_status" AS ENUM('public', 'private');--> statement-breakpoint
-CREATE TYPE "public"."user_role" AS ENUM('user', 'admin');--> statement-breakpoint
+CREATE TYPE "public"."course_section_status" AS ENUM('public', 'private');
+CREATE TYPE "public"."lesson_status" AS ENUM('public', 'private', 'preview');
+CREATE TYPE "public"."product_status" AS ENUM('public', 'private');
+CREATE TYPE "public"."user_role" AS ENUM('user', 'admin');
 CREATE TABLE "courses" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
@@ -57,11 +57,11 @@ CREATE TABLE "purchases" (
 	"productDetails" jsonb NOT NULL,
 	"userId" uuid NOT NULL,
 	"productId" uuid NOT NULL,
-	"stripeSessionId" text NOT NULL,
+	"flutterwaveTransactionId" text,
 	"refundedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "purchases_stripeSessionId_unique" UNIQUE("stripeSessionId")
+	CONSTRAINT "purchases_flutterwaveTransactionId_unique" UNIQUE("flutterwaveTransactionId")
 );
 --> statement-breakpoint
 CREATE TABLE "users" (

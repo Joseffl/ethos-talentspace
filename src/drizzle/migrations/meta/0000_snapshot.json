@@ -1,5 +1,5 @@
 {
-  "id": "e26c8b2a-6ab6-472c-b9dc-9adcaccae6f2",
+  "id": "8bd94325-32dd-4141-9c18-823b462eb2b2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -385,11 +385,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "stripeSessionId": {
-          "name": "stripeSessionId",
+        "flutterwaveTransactionId": {
+          "name": "flutterwaveTransactionId",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "refundedAt": {
           "name": "refundedAt",
@@ -443,11 +443,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "purchases_stripeSessionId_unique": {
-          "name": "purchases_stripeSessionId_unique",
+        "purchases_flutterwaveTransactionId_unique": {
+          "name": "purchases_flutterwaveTransactionId_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "stripeSessionId"
+            "flutterwaveTransactionId"
           ]
         }
       },

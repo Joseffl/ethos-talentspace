@@ -1,7 +1,6 @@
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { PageHeader } from "@/components/PageHeader"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -16,13 +15,10 @@ import { getPurchaseIdTag } from "@/features/purchases/db/cache"
 import { formatDate, formatPrice } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
 import { getCurrentUser } from "@/services/clerk"
-import { stripeServerClient } from "@/services/stripe/stripeServer"
 import { and, eq } from "drizzle-orm"
 import { cacheTag } from "next/dist/server/use-cache/cache-tag"
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Fragment, Suspense } from "react"
-import Stripe from "stripe"
 
 export default async function PurchasePage({
   params,
@@ -50,23 +46,14 @@ async function SuspenseBoundary({ purchaseId }: { purchaseId: string }) {
 
   if (purchase == null) return notFound()
 
-  const { receiptUrl, pricingRows } = await getStripeDetails(
-    purchase.stripeSessionId,
-    purchase.pricePaidInCents,
-    purchase.refundedAt != null
-  )
+  const pricingRows = getPricingRows({
+    total: purchase.pricePaidInCents,
+    isRefunded: purchase.refundedAt != null,
+  })
 
   return (
     <>
-      <PageHeader title={purchase.productDetails.name}>
-        {receiptUrl && (
-          <Button variant="outline" asChild>
-            <Link target="_blank" href={receiptUrl}>
-              View Receipt
-            </Link>
-          </Button>
-        )}
-      </PageHeader>
+      <PageHeader title={purchase.productDetails.name} />
 
       <Card>
         <CardHeader className="pb-4">
@@ -97,6 +84,14 @@ async function SuspenseBoundary({ purchaseId }: { purchaseId: string }) {
             <label className="text-sm text-muted-foreground">Seller</label>
             <div>Web Dev Simplified</div>
           </div>
+          <div>
+            <label className="text-sm text-muted-foreground">
+              Transaction ID
+            </label>
+            <div className="font-mono text-sm">
+              {purchase.flutterwaveTransactionId}
+            </div>
+          </div>
         </CardContent>
         <CardFooter className="grid grid-cols-2 gap-y-4 gap-x-8 border-t pt-4">
           {pricingRows.map(({ label, amountInDollars, isBold }) => (
@@ -123,97 +118,41 @@ async function getPurchase({ userId, id }: { userId: string; id: string }) {
       refundedAt: true,
       productDetails: true,
       createdAt: true,
-      stripeSessionId: true,
+      flutterwaveTransactionId: true,
     },
     where: and(eq(PurchaseTable.id, id), eq(PurchaseTable.userId, userId)),
   })
 }
 
-async function getStripeDetails(
-  stripeSessionId: string,
-  pricePaidInCents: number,
+function getPricingRows({
+  total,
+  isRefunded,
+}: {
+  total: number
   isRefunded: boolean
-) {
-  const { payment_intent, total_details, amount_total, amount_subtotal } =
-    await stripeServerClient.checkout.sessions.retrieve(stripeSessionId, {
-      expand: [
-        "payment_intent.latest_charge",
-        "total_details.breakdown.discounts",
-      ],
-    })
-
-  const refundAmount =
-    typeof payment_intent !== "string" &&
-    typeof payment_intent?.latest_charge !== "string"
-      ? payment_intent?.latest_charge?.amount_refunded
-      : isRefunded
-      ? pricePaidInCents
-      : undefined
-
-  return {
-    receiptUrl: getReceiptUrl(payment_intent),
-    pricingRows: getPricingRows(total_details, {
-      total: (amount_total ?? pricePaidInCents) - (refundAmount ?? 0),
-      subtotal: amount_subtotal ?? pricePaidInCents,
-      refund: refundAmount,
-    }),
-  }
-}
-
-function getReceiptUrl(paymentIntent: Stripe.PaymentIntent | string | null) {
-  if (
-    typeof paymentIntent === "string" ||
-    typeof paymentIntent?.latest_charge === "string"
-  ) {
-    return
-  }
-
-  return paymentIntent?.latest_charge?.receipt_url
-}
-
-function getPricingRows(
-  totalDetails: Stripe.Checkout.Session.TotalDetails | null,
-  {
-    total,
-    subtotal,
-    refund,
-  }: { total: number; subtotal: number; refund?: number }
-) {
+}) {
   const pricingRows: {
     label: string
     amountInDollars: number
     isBold?: boolean
   }[] = []
 
-  if (totalDetails?.breakdown != null) {
-    totalDetails.breakdown.discounts.forEach(discount => {
-      pricingRows.push({
-        label: `${discount.discount.coupon.name} (${discount.discount.coupon.percent_off}% off)`,
-        amountInDollars: discount.amount / -100,
-      })
-    })
-  }
-
-  if (refund) {
+  if (isRefunded) {
     pricingRows.push({
       label: "Refund",
-      amountInDollars: refund / -100,
+      amountInDollars: (total / -100),
     })
-  }
-
-  if (pricingRows.length === 0) {
-    return [{ label: "Total", amountInDollars: total / 100, isBold: true }]
   }
 
   return [
     {
       label: "Subtotal",
-      amountInDollars: subtotal / 100,
+      amountInDollars: total / 100,
     },
     ...pricingRows,
     {
       label: "Total",
-      amountInDollars: total / 100,
+      amountInDollars: isRefunded ? 0 : total / 100,
       isBold: true,
     },
   ]

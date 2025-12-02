@@ -44,15 +44,15 @@ export default async function AdminPage() {
     <div className="min-h-screen ">
       <div className="container py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-[#28ac30] to-[#28ac30] bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-50 mb-2">
             Dashboard Overview
           </h1>
         </div>
 
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-600" />
-            Revenue Metrics
+            <TrendingUp className="w-5 h-5 text-[#28ac30]" />
+            Revenue 
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <Suspense fallback={<StatCardSkeleton count={5} />}>
@@ -63,7 +63,7 @@ export default async function AdminPage() {
 
         <div>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-blue-600" />
+            <GraduationCap className="w-5 h-5 text-[#28ac30]" />
             Platform Metrics
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -104,7 +104,7 @@ async function PurchaseStats() {
         title="Net Sales"
         icon={DollarSign}
         trend="up"
-        accentColor="emerald"
+        accentColor="primary"
       >
         {formatPrice(netSales)}
       </AnimatedStatCard>
@@ -112,24 +112,24 @@ async function PurchaseStats() {
         title="Refunded Sales"
         icon={RefreshCcw}
         trend="down"
-        accentColor="orange"
+        accentColor="secondary"
       >
         {formatPrice(totalRefunds)}
       </AnimatedStatCard>
       <AnimatedStatCard
         title="Active Purchases"
         icon={ShoppingBag}
-        accentColor="blue"
+        accentColor="primary"
       >
         {formatNumber(netPurchases)}
       </AnimatedStatCard>
-      <AnimatedStatCard title="Refunded" icon={XCircle} accentColor="red">
+      <AnimatedStatCard title="Refunded" icon={XCircle} accentColor="secondary">
         {formatNumber(refundedPurchases)}
       </AnimatedStatCard>
       <AnimatedStatCard
         title="Avg Per Customer"
         icon={TrendingUp}
-        accentColor="purple"
+        accentColor="primary"
       >
         {formatNumber(averageNetPurchasesPerCustomer, {
           maximumFractionDigits: 2,
@@ -142,7 +142,7 @@ async function PurchaseStats() {
 async function StudentStats() {
   const total = await getTotalStudents();
   return (
-    <AnimatedStatCard title="Students" icon={Users} accentColor="blue">
+    <AnimatedStatCard title="Students" icon={Users} accentColor="primary">
       {formatNumber(total)}
     </AnimatedStatCard>
   );
@@ -151,7 +151,7 @@ async function StudentStats() {
 async function ProductStats() {
   const total = await getTotalProducts();
   return (
-    <AnimatedStatCard title="Products" icon={Package} accentColor="indigo">
+    <AnimatedStatCard title="Products" icon={Package} accentColor="primary">
       {formatNumber(total)}
     </AnimatedStatCard>
   );
@@ -160,7 +160,7 @@ async function ProductStats() {
 async function CourseStats() {
   const total = await getTotalCourses();
   return (
-    <AnimatedStatCard title="Courses" icon={GraduationCap} accentColor="violet">
+    <AnimatedStatCard title="Courses" icon={GraduationCap} accentColor="primary">
       {formatNumber(total)}
     </AnimatedStatCard>
   );
@@ -169,7 +169,7 @@ async function CourseStats() {
 async function CourseSectionStats() {
   const total = await getTotalCourseSections();
   return (
-    <AnimatedStatCard title="Sections" icon={BookOpen} accentColor="fuchsia">
+    <AnimatedStatCard title="Sections" icon={BookOpen} accentColor="primary">
       {formatNumber(total)}
     </AnimatedStatCard>
   );
@@ -178,7 +178,7 @@ async function CourseSectionStats() {
 async function LessonStats() {
   const total = await getTotalLessons();
   return (
-    <AnimatedStatCard title="Lessons" icon={FileText} accentColor="pink">
+    <AnimatedStatCard title="Lessons" icon={FileText} accentColor="primary">
       {formatNumber(total)}
     </AnimatedStatCard>
   );
@@ -189,16 +189,7 @@ interface AnimatedStatCardProps {
   children: ReactNode;
   icon: any;
   trend?: "up" | "down";
-  accentColor?:
-    | "emerald"
-    | "blue"
-    | "red"
-    | "orange"
-    | "purple"
-    | "indigo"
-    | "violet"
-    | "fuchsia"
-    | "pink";
+  accentColor?: "primary" | "secondary";
 }
 
 function AnimatedStatCard({
@@ -206,18 +197,11 @@ function AnimatedStatCard({
   children,
   icon: Icon,
   trend,
-  accentColor = "blue",
+  accentColor = "primary",
 }: AnimatedStatCardProps) {
   const colorClasses = {
-    emerald: "from-emerald-500 to-teal-500 shadow-emerald-500/20",
-    blue: "from-blue-500 to-cyan-500 shadow-blue-500/20",
-    red: "from-red-500 to-rose-500 shadow-red-500/20",
-    orange: "from-orange-500 to-amber-500 shadow-orange-500/20",
-    purple: "from-purple-500 to-violet-500 shadow-purple-500/20",
-    indigo: "from-indigo-500 to-blue-500 shadow-indigo-500/20",
-    violet: "from-violet-500 to-purple-500 shadow-violet-500/20",
-    fuchsia: "from-fuchsia-500 to-pink-500 shadow-fuchsia-500/20",
-    pink: "from-pink-500 to-rose-500 shadow-pink-500/20",
+    primary: "from-[#28ac30] to-[#1f8622] shadow-green-500/20",
+    secondary: "from-[#28ac30]/70 to-[#1f8622]/70 shadow-green-500/10",
   };
 
   return (
@@ -249,7 +233,7 @@ function AnimatedStatCard({
             <div
               className={`flex items-center gap-1 text-xs font-medium ${
                 trend === "up"
-                  ? "text-emerald-600 dark:text-emerald-400"
+                  ? "text-[#28ac30] dark:text-[#28ac30]"
                   : "text-red-600 dark:text-red-400"
               }`}
             >

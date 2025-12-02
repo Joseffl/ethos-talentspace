@@ -1,4 +1,3 @@
-// app/admin/users/page.tsx
 import { PageHeader } from "@/components/PageHeader"
 import { db } from "@/drizzle/db"
 import { UserTable, PurchaseTable, UserCourseAccessTable } from "@/drizzle/schema"

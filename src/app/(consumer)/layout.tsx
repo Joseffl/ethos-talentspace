@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button"
 import { canAccessAdminPages } from "@/permissions/general"
 import { getCurrentUser } from "@/services/clerk"
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs"
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs"
 import Link from "next/link"
 import { ReactNode, Suspense } from "react"
+import { NavbarClient } from "./navbar-client"
 
 export default function ConsumerLayout({
   children,
@@ -43,24 +44,14 @@ function Navbar() {
               >
                 Purchase History
               </Link>
-              <div className="size-8 flex items-center justify-center">
-                <UserButton
-                  appearance={{
-                    elements: {
-                      userButtonAvatarBox: { width: "100%", height: "100%" },
-                    },
-                  }}
-                />
-              </div>
+              <NavbarClient />
             </SignedIn>
           </Suspense>
 
           <Suspense>
             <SignedOut>
               <Button className="self-center bg-[#28ac30]" asChild>
-                <SignInButton>Sign In
-                  
-                  </SignInButton>
+                <SignInButton>Sign In</SignInButton>
               </Button>
             </SignedOut>
           </Suspense>

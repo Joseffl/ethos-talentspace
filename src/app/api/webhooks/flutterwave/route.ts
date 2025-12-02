@@ -67,8 +67,33 @@ function verifyWebhookSignature(
   return hash === signature
 }
 
+// async function verifyFlutterwaveTransaction(transactionId: string) {
+//   try {
+//     const response = await axios.get(
+//       `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${env.FLUTTERWAVE_SECRET_KEY}`,
+//         },
+//       }
+//     )
+
+//     if (response.data.status !== "success") {
+//       throw new Error("Transaction verification failed")
+//     }
+
+//     return response.data.data
+//   } catch (error) {
+//     console.error("Transaction verification error:", error)
+//     throw new Error("Failed to verify transaction")
+//   }
+// }
+
 async function verifyFlutterwaveTransaction(transactionId: string) {
   try {
+    console.log("Verifying transaction ID:", transactionId)
+    console.log("Using secret key:", env.FLUTTERWAVE_SECRET_KEY?.substring(0, 10) + "...")
+
     const response = await axios.get(
       `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`,
       {
@@ -78,13 +103,18 @@ async function verifyFlutterwaveTransaction(transactionId: string) {
       }
     )
 
+    console.log("Verification response status:", response.status)
+    console.log("Response data:", response.data)
+
     if (response.data.status !== "success") {
       throw new Error("Transaction verification failed")
     }
 
     return response.data.data
-  } catch (error) {
-    console.error("Transaction verification error:", error)
+  } catch (error: any) {
+    console.error("Transaction verification error:", error.message)
+    console.error("Error response data:", error.response?.data)
+    console.error("Error status:", error.response?.status)
     throw new Error("Failed to verify transaction")
   }
 }

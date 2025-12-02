@@ -1,3 +1,4 @@
+
 import { SkeletonButton } from "@/components/Skeleton"
 import {
   Accordion,
@@ -35,12 +36,11 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
-export default async function ProductPage({
-  params,
-}: {
+export default async function ProductPage(props: {
   params: Promise<{ productId: string }>
 }) {
-  const { productId } = await params
+  const { productId } = await props.params   // THE ONLY REQUIRED FIX
+
   const product = await getPublicProduct(productId)
 
   if (product == null) return notFound()
@@ -64,7 +64,9 @@ export default async function ProductPage({
             >
               <Price price={product.priceInDollars} />
             </Suspense>
+
             <h1 className="text-4xl font-semibold">{product.name}</h1>
+
             <div className="text-muted-foreground">
               {formatPlural(courseCount, {
                 singular: "course",
@@ -77,11 +79,14 @@ export default async function ProductPage({
               })}
             </div>
           </div>
+
           <div className="text-xl">{product.description}</div>
+
           <Suspense fallback={<SkeletonButton className="h-12 w-36" />}>
             <PurchaseButton productId={product.id} />
           </Suspense>
         </div>
+
         <div className="relative aspect-video max-w-lg flex-grow">
           <Image
             src={product.imageUrl}
@@ -91,6 +96,7 @@ export default async function ProductPage({
           />
         </div>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 items-start">
         {product.courses.map(course => (
           <Card key={course.id}>
@@ -111,6 +117,7 @@ export default async function ProductPage({
                 )}
               </CardDescription>
             </CardHeader>
+
             <CardContent>
               <Accordion type="multiple">
                 {course.courseSections.map(section => (
@@ -126,6 +133,7 @@ export default async function ProductPage({
                         </span>
                       </div>
                     </AccordionTrigger>
+
                     <AccordionContent className="flex flex-col gap-2">
                       {section.lessons.map(lesson => (
                         <div
@@ -133,6 +141,7 @@ export default async function ProductPage({
                           className="flex items-center gap-2 text-base"
                         >
                           <VideoIcon className="size-4" />
+
                           {lesson.status === "preview" ? (
                             <Link
                               href={`/courses/${course.id}/lessons/${lesson.id}`}
@@ -159,22 +168,24 @@ export default async function ProductPage({
 
 async function PurchaseButton({ productId }: { productId: string }) {
   const { userId } = await getCurrentUser()
+
   const alreadyOwnsProduct =
     userId != null && (await userOwnsProduct({ userId, productId }))
 
   if (alreadyOwnsProduct) {
     return <p>You already own this product</p>
-  } else {
-    return (
-      <Button className="text-xl h-auto py-4 px-8 rounded-lg" asChild>
-        <Link href={`/products/${productId}/purchase`}>Get Now</Link>
-      </Button>
-    )
   }
+
+  return (
+    <Button className="text-xl h-auto py-4 px-8 rounded-lg" asChild>
+      <Link href={`/products/${productId}/purchase`}>Get Now</Link>
+    </Button>
+  )
 }
 
 async function Price({ price }: { price: number }) {
   const coupon = await getUserCoupon()
+
   if (price === 0 || coupon == null) {
     return <div className="text-xl">{formatPrice(price)}</div>
   }
