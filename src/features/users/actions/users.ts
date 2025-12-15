@@ -40,7 +40,6 @@ export async function deleteUserAction(userId: string) {
   }
 }
 
-// Optional: Create a wrapper action that redirects
 export async function deleteUserAndRedirect(userId: string) {
   const result = await deleteUserAction(userId)
   

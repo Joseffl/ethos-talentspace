@@ -56,10 +56,7 @@ export default function AllCourses({
       <h3 className="text-2xl font-bold mb-4">
         {activeCategory ? activeCategory.name : "All Courses"}
       </h3>
-      
-      {/* <p className="text-gray-600 mb-6">
-        {filteredProducts.length} courses
-      </p> */}
+ 
 
       <section className="mb-8 max-w-2xl">
         <div className="relative">
@@ -76,7 +73,6 @@ export default function AllCourses({
 
       <CategoryFilter categories={categories} activeSlug={activeCategorySlug} />
 
-      {/* Courses Grid */}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
         {filteredProducts.map((product) => (
           <ProductCard key={product.id} {...product} />

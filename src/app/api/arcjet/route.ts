@@ -1,4 +1,3 @@
-// app/api/something/route.ts
 
 import arcjet, { detectBot, shield, slidingWindow } from "@arcjet/next";
 

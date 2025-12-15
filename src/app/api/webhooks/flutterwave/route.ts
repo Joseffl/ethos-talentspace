@@ -30,14 +30,12 @@ export async function POST(request: NextRequest) {
   const signature = request.headers.get("verif-hash")
   const body = await request.text()
 
-  // Verify the webhook signature
   if (!verifyWebhookSignature(body, signature)) {
     return new Response("Invalid signature", { status: 401 })
   }
 
   const event = JSON.parse(body)
 
-  // Flutterwave sends completed payments with event.data.status === "successful"
   if (event.data?.status === "successful") {
     try {
       const transaction = await verifyFlutterwaveTransaction(
@@ -67,27 +65,7 @@ function verifyWebhookSignature(
   return hash === signature
 }
 
-// async function verifyFlutterwaveTransaction(transactionId: string) {
-//   try {
-//     const response = await axios.get(
-//       `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${env.FLUTTERWAVE_SECRET_KEY}`,
-//         },
-//       }
-//     )
 
-//     if (response.data.status !== "success") {
-//       throw new Error("Transaction verification failed")
-//     }
-
-//     return response.data.data
-//   } catch (error) {
-//     console.error("Transaction verification error:", error)
-//     throw new Error("Failed to verify transaction")
-//   }
-// }
 
 async function verifyFlutterwaveTransaction(transactionId: string) {
   try {

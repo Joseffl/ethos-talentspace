@@ -24,7 +24,6 @@ export async function refundPurchase(id: string) {
     )
 
     try {
-      // Verify the transaction first to get details
       const verifyResponse = await axios.get(
         `https://api.flutterwave.com/v3/transactions/${refundedPurchase.flutterwaveTransactionId}/verify`,
         {
@@ -42,7 +41,6 @@ export async function refundPurchase(id: string) {
         }
       }
 
-      // Create refund using Flutterwave API
       await axios.post(
         `https://api.flutterwave.com/v3/transactions/${refundedPurchase.flutterwaveTransactionId}/refund`,
         {},
@@ -53,7 +51,6 @@ export async function refundPurchase(id: string) {
         }
       )
 
-      // Revoke course access
       await revokeUserCourseAccess(refundedPurchase, trx)
     } catch (error) {
       console.error("Refund error:", error)

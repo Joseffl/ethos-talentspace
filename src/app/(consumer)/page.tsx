@@ -125,7 +125,6 @@ export default async function HomePage({ searchParams }: PageProps) {
         </section>
       )}
 
-      {/* CTA Section */}
       <SignedIn>
         <CTAAuthenticated />
       </SignedIn>
@@ -136,7 +135,6 @@ export default async function HomePage({ searchParams }: PageProps) {
   );
 }
 
-// Hero for authenticated users
 function HeroAuthenticated() {
   return (
     <section className="mb-16 bg-gradient-to-r from-[#28ac30] to-[#1f8a26] rounded-2xl overflow-hidden shadow-xl">
@@ -175,7 +173,6 @@ function HeroAuthenticated() {
   );
 }
 
-// Hero for non-authenticated users
 function HeroUnauthenticated() {
   return (
     <section className="mb-16 bg-gradient-to-r from-[#28ac30] to-[#1f8a26] rounded-2xl overflow-hidden shadow-xl">
@@ -215,11 +212,9 @@ function HeroUnauthenticated() {
   );
 }
 
-// Component for authenticated users
 async function AuthenticatedContent() {
   const { userId } = await getCurrentUser();
   
-  // Fetch user stats and courses
   const [userStats, userCourses] = await Promise.all([
     userId ? getUserStats(userId) : null,
     userId ? getUserCoursesForHomepage(userId) : []
@@ -254,7 +249,6 @@ async function AuthenticatedContent() {
 
   return (
     <>
-      {/* Stats Cards */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
         {stats.map((stat, index) => (
           <div
@@ -274,7 +268,6 @@ async function AuthenticatedContent() {
         ))}
       </section>
 
-      {/* Continue Learning Section */}
       <section className="mb-16">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-2xl font-bold text-gray-900">
@@ -340,7 +333,6 @@ async function AuthenticatedContent() {
   );
 }
 
-// Component for non-authenticated users
 function UnauthenticatedContent() {
   const features = [
     {
@@ -374,7 +366,6 @@ function UnauthenticatedContent() {
 
   return (
     <>
-      {/* Trust Indicators */}
       <section className="mb-16">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
@@ -383,7 +374,6 @@ function UnauthenticatedContent() {
         </div>
       </section>
 
-      {/* Why Choose Us */}
       <section className="mb-25">
         <h3 className="text-2xl font-bold text-gray-900 text-center mb-10">
           Why Engineers Choose Us
@@ -406,7 +396,6 @@ function UnauthenticatedContent() {
         </div>
       </section>
 
-      {/* How It Works */}
       <section className="mb-16 bg-gradient-to-br from-gray-50 to-white rounded-2xl p-8 md:p-12 border border-gray-100">
         <h3 className="text-2xl font-bold text-gray-900 text-center mb-10">
           Start Learning in 3 Simple Steps
@@ -514,24 +503,20 @@ async function getUserStats(userId: string) {
     getUserLessonCompleteUserTag(userId)
   );
 
-  // Get courses enrolled count
   const coursesEnrolled = await db
     .select({ count: countDistinct(UserCourseAccessTable.courseId) })
     .from(UserCourseAccessTable)
     .where(eq(UserCourseAccessTable.userId, userId))
     .then(result => result[0]?.count || 0);
 
-  // Get completed lessons count (for hours learned approximation)
   const completedLessons = await db
     .select({ count: countDistinct(UserLessonCompleteTable.lessonId) })
     .from(UserLessonCompleteTable)
     .where(eq(UserLessonCompleteTable.userId, userId))
     .then(result => result[0]?.count || 0);
 
-  // Approximate hours: assume each lesson is ~15 minutes
   const hoursLearned = Math.round((completedLessons * 15) / 60);
 
-  // Get certificates (courses with 100% completion)
   const coursesProgress = await db
     .select({
       courseId: CourseTable.id,
@@ -570,7 +555,6 @@ async function getUserStats(userId: string) {
     course => course.totalLessons > 0 && course.completedLessons === course.totalLessons
   ).length;
 
-  // Calculate average progress
   const avgProgress = coursesProgress.length > 0
     ? Math.round(
         coursesProgress.reduce((sum, course) => {

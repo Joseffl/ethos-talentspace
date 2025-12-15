@@ -103,7 +103,6 @@ export default async function ProductPage(props: {
       {((product.prerequisites && product.prerequisites.length > 0) ||
         (product.learningOutcomes && product.learningOutcomes.length > 0)) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
-          {/* Prerequisites */}
           {product.prerequisites && product.prerequisites.length > 0 && (
             <Card>
               <CardHeader>

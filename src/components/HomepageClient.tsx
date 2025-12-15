@@ -38,7 +38,6 @@ export function HomePageClient({
 }: HomePageClientProps) {
   const [searchTerm, setSearchTerm] = useState("")
 
-  // Filter products based on search term
   const filteredProducts = initialProducts.filter((product) => {
     const term = searchTerm.toLowerCase()
     return (
@@ -54,7 +53,6 @@ export function HomePageClient({
 
   return (
     <>
-      {/* Search Bar */}
       <section className="mb-8">
         <div className="relative max-w-2xl">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -68,7 +66,6 @@ export function HomePageClient({
         </div>
       </section>
 
-      {/* Continue Learning Section */}
       <section className="mb-12">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-gray-900">
@@ -98,10 +95,8 @@ export function HomePageClient({
         </div>
       </section>
 
-      {/* Category Filter */}
       <CategoryFilter categories={categories} activeSlug={activeSlug} />
 
-      {/* Courses Grid */}
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-gray-900">

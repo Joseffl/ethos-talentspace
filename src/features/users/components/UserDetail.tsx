@@ -40,7 +40,6 @@ export function UserDetailModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* User Avatar and Name */}
           <div className="flex flex-col items-center gap-3">
             {user.imageUrl ? (
               <Image
@@ -61,9 +60,7 @@ export function UserDetailModal({
             </div>
           </div>
 
-          {/* User Information */}
           <div className="space-y-4">
-            {/* Email */}
             <div className="flex items-start gap-3">
               <Mail className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div className="flex-1">
@@ -74,7 +71,6 @@ export function UserDetailModal({
               </div>
             </div>
 
-            {/* Joined Date */}
             <div className="flex items-start gap-3">
               <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div className="flex-1">
@@ -85,7 +81,6 @@ export function UserDetailModal({
               </div>
             </div>
 
-            {/* Purchases */}
             <div className="flex items-start gap-3">
               <ShoppingBag className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div className="flex-1">
@@ -96,7 +91,6 @@ export function UserDetailModal({
               </div>
             </div>
 
-            {/* Courses */}
             <div className="flex items-start gap-3">
               <BookOpen className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div className="flex-1">
