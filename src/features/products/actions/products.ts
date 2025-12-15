@@ -1,56 +1,56 @@
-// "use server";
+"use server";
 
-// import { z } from "zod";
-// import {
-//   insertProduct,
-//   updateProduct as updateProductDb,
-//   deleteProduct as deleteProductDb,
-// } from "@/features/products/db/products";
-// import { redirect } from "next/navigation";
-// import {
-//   canCreateProducts,
-//   canDeleteProducts,
-//   canUpdateProducts,
-// } from "../permissions/products";
-// import { getCurrentUser } from "@/services/clerk";
-// import { productSchema } from "../schema/products";
+import { z } from "zod";
+import {
+  insertProduct,
+  updateProduct as updateProductDb,
+  deleteProduct as deleteProductDb,
+} from "@/features/products/db/products";
+import { redirect } from "next/navigation";
+import {
+  canCreateProducts,
+  canDeleteProducts,
+  canUpdateProducts,
+} from "../permissions/products";
+import { getCurrentUser } from "@/services/clerk";
+import { productSchema } from "../schema/products";
 
-// export async function createProduct(unsafeData: z.infer<typeof productSchema>) {
-//   const { success, data } = productSchema.safeParse(unsafeData);
+export async function createProduct(unsafeData: z.infer<typeof productSchema>) {
+  const { success, data } = productSchema.safeParse(unsafeData);
 
-//   if (!success || !canCreateProducts(await getCurrentUser())) {
-//     return { error: true, message: "There was an error creating your product" };
-//   }
+  if (!success || !canCreateProducts(await getCurrentUser())) {
+    return { error: true, message: "There was an error creating your product" };
+  }
 
-//   await insertProduct(data);
+  await insertProduct(data);
 
-//   redirect("/admin/products");
-// }
+  redirect("/admin/products");
+}
 
-// export async function updateProduct(
-//   id: string,
-//   unsafeData: z.infer<typeof productSchema>
-// ) {
-//   const { success, data } = productSchema.safeParse(unsafeData);
+export async function updateProduct(
+  id: string,
+  unsafeData: z.infer<typeof productSchema>
+) {
+  const { success, data } = productSchema.safeParse(unsafeData);
 
-//   if (!success || !canUpdateProducts(await getCurrentUser())) {
-//     return { error: true, message: "There was an error updating your product" };
-//   }
+  if (!success || !canUpdateProducts(await getCurrentUser())) {
+    return { error: true, message: "There was an error updating your product" };
+  }
 
-//   await updateProductDb(id, data);
+  await updateProductDb(id, data);
 
-//   redirect("/admin/products");
-// }
+  redirect("/admin/products");
+}
 
-// export async function deleteProduct(id: string) {
-//   if (!canDeleteProducts(await getCurrentUser())) {
-//     return { error: true, message: "Error deleting your product" };
-//   }
+export async function deleteProduct(id: string) {
+  if (!canDeleteProducts(await getCurrentUser())) {
+    return { error: true, message: "Error deleting your product" };
+  }
 
-//   await deleteProductDb(id);
+  await deleteProductDb(id);
 
-//   return { error: false, message: "Successfully deleted your product" };
-// }
+  return { error: false, message: "Successfully deleted your product" };
+}
 
 
 // "use server";
@@ -122,76 +122,77 @@
 //   return { error: false, message: "Successfully deleted your product" };
 // }
 
-"use server";
 
-import { z } from "zod";
-import {
-  insertProduct,
-  updateProduct as updateProductDb,
-  deleteProduct as deleteProductDb,
-} from "@/features/products/db/products";
-import { redirect } from "next/navigation";
-import {
-  canCreateProducts,
-  canDeleteProducts,
-  canUpdateProducts,
-} from "../permissions/products";
-import { getCurrentUser } from "@/services/clerk";
-import { productSchema } from "../schema/products";
-import { revalidateTag, revalidatePath } from "next/cache";
-import { getProductGlobalTag, getProductIdTag } from "../db/cache";
+// "use server";
 
-export async function createProduct(unsafeData: z.infer<typeof productSchema>) {
-  const { success, data } = productSchema.safeParse(unsafeData);
+// import { z } from "zod";
+// import {
+//   insertProduct,
+//   updateProduct as updateProductDb,
+//   deleteProduct as deleteProductDb,
+// } from "@/features/products/db/products";
+// import { redirect } from "next/navigation";
+// import {
+//   canCreateProducts,
+//   canDeleteProducts,
+//   canUpdateProducts,
+// } from "../permissions/products";
+// import { getCurrentUser } from "@/services/clerk";
+// import { productSchema } from "../schema/products";
+// import { revalidateTag, revalidatePath } from "next/cache";
+// import { getProductGlobalTag, getProductIdTag } from "../db/cache";
 
-  if (!success || !canCreateProducts(await getCurrentUser())) {
-    return { error: true, message: "There was an error creating your product" };
-  }
+// export async function createProduct(unsafeData: z.infer<typeof productSchema>) {
+//   const { success, data } = productSchema.safeParse(unsafeData);
 
-  await insertProduct(data);
+//   if (!success || !canCreateProducts(await getCurrentUser())) {
+//     return { error: true, message: "There was an error creating your product" };
+//   }
 
-  // Use both methods for maximum reliability
-  revalidateTag(getProductGlobalTag());
-  revalidateTag("categories");
-  revalidatePath("/admin/products");
-  revalidatePath("/admin/products", "layout");
+//   await insertProduct(data);
 
-  redirect("/admin/products");
-}
+//   // Use both methods for maximum reliability
+//   revalidateTag(getProductGlobalTag());
+//   revalidateTag("categories");
+//   revalidatePath("/admin/products");
+//   revalidatePath("/admin/products", "layout");
 
-export async function updateProduct(
-  id: string,
-  unsafeData: z.infer<typeof productSchema>
-) {
-  const { success, data } = productSchema.safeParse(unsafeData);
+//   redirect("/admin/products");
+// }
 
-  if (!success || !canUpdateProducts(await getCurrentUser())) {
-    return { error: true, message: "There was an error updating your product" };
-  }
+// export async function updateProduct(
+//   id: string,
+//   unsafeData: z.infer<typeof productSchema>
+// ) {
+//   const { success, data } = productSchema.safeParse(unsafeData);
 
-  await updateProductDb(id, data);
+//   if (!success || !canUpdateProducts(await getCurrentUser())) {
+//     return { error: true, message: "There was an error updating your product" };
+//   }
 
-  // Use both methods for maximum reliability
-  revalidateTag(getProductIdTag(id));
-  revalidateTag(getProductGlobalTag());
-  revalidateTag("categories");
-  revalidatePath("/admin/products");
-  revalidatePath(`/admin/products/${id}`);
+//   await updateProductDb(id, data);
 
-  redirect("/admin/products");
-}
+//   // Use both methods for maximum reliability
+//   revalidateTag(getProductIdTag(id));
+//   revalidateTag(getProductGlobalTag());
+//   revalidateTag("categories");
+//   revalidatePath("/admin/products");
+//   revalidatePath(`/admin/products/${id}`);
 
-export async function deleteProduct(id: string) {
-  if (!canDeleteProducts(await getCurrentUser())) {
-    return { error: true, message: "Error deleting your product" };
-  }
+//   redirect("/admin/products");
+// }
 
-  await deleteProductDb(id);
+// export async function deleteProduct(id: string) {
+//   if (!canDeleteProducts(await getCurrentUser())) {
+//     return { error: true, message: "Error deleting your product" };
+//   }
 
-  // Use both methods for maximum reliability
-  revalidateTag(getProductIdTag(id));
-  revalidateTag(getProductGlobalTag());
-  revalidatePath("/admin/products");
+//   await deleteProductDb(id);
 
-  return { error: false, message: "Successfully deleted your product" };
-}
+//   // Use both methods for maximum reliability
+//   revalidateTag(getProductIdTag(id));
+//   revalidateTag(getProductGlobalTag());
+//   revalidatePath("/admin/products");
+
+//   return { error: false, message: "Successfully deleted your product" };
+// }
