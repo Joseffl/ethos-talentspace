@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader"
 import { db } from "@/drizzle/db"
-import { CourseTable, ProductTable } from "@/drizzle/schema"
+import { CategoryTable, CourseTable, ProductTable } from "@/drizzle/schema"
 import { getCourseGlobalTag } from "@/features/courses/db/cache/courses"
 import { ProductForm } from "@/features/products/components/ProductForm"
 import { getProductIdTag } from "@/features/products/db/cache"
@@ -25,8 +25,12 @@ export default async function EditProductPage({
         product={{
           ...product,
           courseIds: product.courseProducts.map(c => c.courseId),
+          categoryId: product.categoryId ?? undefined,
+          prerequisites: product.prerequisites ?? undefined,
+          learningOutcomes: product.learningOutcomes ?? undefined,
         }}
         courses={await getCourses()}
+        categories={await getCategories()} 
       />
     </div>
   )
@@ -38,6 +42,16 @@ async function getCourses() {
 
   return db.query.CourseTable.findMany({
     orderBy: asc(CourseTable.name),
+    columns: { id: true, name: true },
+  })
+}
+
+async function getCategories() {
+  "use cache"
+  cacheTag("categories")
+
+  return db.query.CategoryTable.findMany({
+    orderBy: asc(CategoryTable.name),
     columns: { id: true, name: true },
   })
 }
@@ -54,6 +68,9 @@ async function getProduct(id: string) {
       priceInDollars: true,
       status: true,
       imageUrl: true,
+      categoryId: true, 
+      prerequisites: true,
+      learningOutcomes: true,
     },
     where: eq(ProductTable.id, id),
     with: { courseProducts: { columns: { courseId: true } } },

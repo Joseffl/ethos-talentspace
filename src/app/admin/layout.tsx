@@ -16,8 +16,8 @@ export default function AdminLayout({
 
 function Navbar() {
   return (
-    <header className="shadow bg-background z-10">
-      <nav className="flex items-center justify-between container mx-auto px-4 h-12">
+    <header className="shadow bg-background sticky top-0 z-50">
+      <nav className="flex items-center justify-between container mx-auto px-4 h-14">
         <div className="flex items-center gap-2">
           <Link className="text-lg text-[#28ac30] font-bold " href="/admin">
             MAGS LMS

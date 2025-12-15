@@ -11,4 +11,7 @@ export const productSchema = z.object({
   ]),
   status: z.enum(productStatuses),
   courseIds: z.array(z.string()).min(1, "At least one course is required"),
+  categoryId: z.string().nullable(),
+  prerequisites: z.array(z.string()), 
+  learningOutcomes: z.array(z.string()), 
 })

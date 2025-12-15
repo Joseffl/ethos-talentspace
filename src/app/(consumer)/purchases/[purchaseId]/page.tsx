@@ -82,7 +82,7 @@ async function SuspenseBoundary({ purchaseId }: { purchaseId: string }) {
           </div>
           <div>
             <label className="text-sm text-muted-foreground">Seller</label>
-            <div>Web Dev Simplified</div>
+            <div>Mags Engineering Limited</div>
           </div>
           <div>
             <label className="text-sm text-muted-foreground">

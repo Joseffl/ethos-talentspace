@@ -11,7 +11,7 @@ export function NavbarClient() {
   }, [])
 
   if (!isMounted) {
-    return <div className="size-8" /> // Empty placeholder while loading
+    return <div className="size-8" /> 
   }
 
   return (
