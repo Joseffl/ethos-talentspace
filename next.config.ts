@@ -3,8 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     authInterrupts: true,
-    useCache: true
+    useCache: true,
+    serverActions: {
+      bodySizeLimit: '50mb', 
+    },
   },
+
   images: {
     remotePatterns: [
       {

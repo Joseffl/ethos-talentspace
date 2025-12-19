@@ -41,7 +41,7 @@ export function CoursePageClient({
       type="multiple"
       defaultValue={defaultValue ? [defaultValue.id] : undefined}
     >
-      {course.courseSections.map(section => (
+      {/* {course.courseSections.map(section => (
         <AccordionItem key={section.id} value={section.id}>
           <AccordionTrigger className="text-lg">
             {section.name}
@@ -69,7 +69,7 @@ export function CoursePageClient({
             ))}
           </AccordionContent>
         </AccordionItem>
-      ))}
+      ))} */}
     </Accordion>
   )
 }

@@ -1,3 +1,4 @@
+
 import { insertUser } from "@/features/users/db/users"
 import { syncClerkUserMetadata } from "@/services/clerk"
 import { currentUser } from "@clerk/nextjs/server"
@@ -6,13 +7,10 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   const user = await currentUser()
 
-  if (user == null) return new Response("User not found", { status: 500 })
-  if (user.fullName == null) {
-    return new Response("User name missing", { status: 500 })
-  }
-  if (user.primaryEmailAddress?.emailAddress == null) {
+  if (!user) return new Response("User not found", { status: 500 })
+  if (!user.fullName) return new Response("User name missing", { status: 500 })
+  if (!user.primaryEmailAddress?.emailAddress)
     return new Response("User email missing", { status: 500 })
-  }
 
   const dbUser = await insertUser({
     clerkUserId: user.id,
@@ -24,7 +22,20 @@ export async function GET(request: Request) {
 
   await syncClerkUserMetadata(dbUser)
 
-  await new Promise(res => setTimeout(res, 100))
+  await new Promise((res) => setTimeout(res, 100))
 
-  return NextResponse.redirect(request.headers.get("referer") ?? "/")
+  const referer = request.headers.get("referer")
+  const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL
+
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_SERVER_URL is not set")
+  }
+
+  const redirectUrl = referer
+    ? referer.startsWith("http")
+      ? referer
+      : `${baseUrl}${referer}`
+    : baseUrl
+
+  return NextResponse.redirect(redirectUrl)
 }

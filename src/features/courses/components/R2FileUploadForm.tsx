@@ -1,0 +1,411 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Upload, X, FileText, File as FileIcon, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+
+const fileUploadSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  order: z.number().min(0),
+  status: z.enum(["public", "private", "preview"]),
+  sectionId: z.string().optional(),
+});
+
+interface R2FileUploadFormProps {
+  courseId: string;
+  sections?: { id: string; name: string; status: string }[];
+  onSuccess?: () => void;
+}
+
+export function R2FileUploadForm({ 
+  courseId, 
+  sections = [], 
+  onSuccess 
+}: R2FileUploadFormProps) {
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const form = useForm<z.infer<typeof fileUploadSchema>>({
+    resolver: zodResolver(fileUploadSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      order: 0,
+      status: "private",
+      sectionId: undefined,
+    },
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (50MB max)
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("File size must be less than 50MB");
+      return;
+    }
+
+    // Validate file type
+    const allowedExtensions = ["pdf", "pptx", "ppt", "docx", "doc", "xlsx", "xls", "zip"];
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    
+    if (!extension || !allowedExtensions.includes(extension)) {
+      toast.error("Invalid file type. Allowed: PDF, PPTX, DOCX, XLSX, ZIP");
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Auto-fill name if empty
+    if (!form.getValues("name")) {
+      const nameWithoutExtension = file.name.replace(/\.[^/.]+$/, "");
+      form.setValue("name", nameWithoutExtension);
+    }
+  };
+
+  const getFileIcon = () => {
+    if (!selectedFile) return <FileIcon className="w-8 h-8 text-gray-400" />;
+
+    const ext = selectedFile.name.split(".").pop()?.toLowerCase();
+    switch (ext) {
+      case "pdf":
+        return <FileText className="w-8 h-8 text-red-500" />;
+      case "pptx":
+      case "ppt":
+        return <FileIcon className="w-8 h-8 text-orange-500" />;
+      case "docx":
+      case "doc":
+        return <FileIcon className="w-8 h-8 text-blue-500" />;
+      case "xlsx":
+      case "xls":
+        return <FileIcon className="w-8 h-8 text-green-500" />;
+      case "zip":
+        return <FileIcon className="w-8 h-8 text-purple-500" />;
+      default:
+        return <FileIcon className="w-8 h-8 text-gray-500" />;
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    return (bytes / 1024 / 1024).toFixed(2) + " MB";
+  };
+
+  const onSubmit = async (values: z.infer<typeof fileUploadSchema>) => {
+    if (!selectedFile) {
+      toast.error("Please select a file");
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Step 1: Get presigned upload URL from our API
+      setUploadProgress(10);
+      
+      const urlResponse = await fetch("/api/get-upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: selectedFile.name,
+          fileType: selectedFile.type,
+          courseId,
+        }),
+      });
+
+      if (!urlResponse.ok) {
+        throw new Error("Failed to get upload URL");
+      }
+
+      const { uploadUrl, key, fileUrl } = await urlResponse.json();
+
+      // Step 2: Upload directly to R2 using presigned URL
+      setUploadProgress(20);
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        body: selectedFile,
+        headers: {
+          "Content-Type": selectedFile.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload to R2");
+      }
+
+      setUploadProgress(70);
+
+      // Step 3: Save file metadata to database
+      const savePayload = {
+        ...values,
+        storageKey: key,
+        fileUrl: fileUrl,
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        fileType: selectedFile.name.split(".").pop()?.toLowerCase() || "unknown",
+        mimeType: selectedFile.type,
+      };
+
+      const saveResponse = await fetch(`/api/courses/${courseId}/files`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(savePayload),
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error("Failed to save file metadata");
+      }
+
+      setUploadProgress(100);
+
+      toast.success("File uploaded successfully!");
+      
+      // Reset form
+      form.reset();
+      setSelectedFile(null);
+      
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        // Reload page to show new file
+        window.location.reload();
+      }
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload file");
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* File Upload Area */}
+        <div className="border-2 border-dashed rounded-lg p-8 text-center bg-gray-50">
+          <input
+            type="file"
+            id="file-upload"
+            className="hidden"
+            onChange={handleFileChange}
+            accept=".pdf,.pptx,.ppt,.docx,.doc,.xlsx,.xls,.zip"
+            disabled={uploading}
+          />
+
+          {selectedFile ? (
+            <div className="flex items-center justify-center gap-4">
+              {getFileIcon()}
+              <div className="text-left flex-1 min-w-0">
+                <p className="font-semibold truncate">{selectedFile.name}</p>
+                <p className="text-sm text-gray-500">
+                  {formatFileSize(selectedFile.size)}
+                </p>
+              </div>
+              {!uploading && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedFile(null)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          ) : (
+            <label htmlFor="file-upload" className="cursor-pointer">
+              <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg font-semibold mb-2">Click to upload file</p>
+              <p className="text-sm text-gray-500">
+                PDF, PPTX, DOCX, XLSX, or ZIP (max 50MB)
+              </p>
+            </label>
+          )}
+
+          {/* Upload Progress */}
+          {uploading && (
+            <div className="mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-[#28ac30] h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Uploading... {uploadProgress}%
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* File Details Form */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>File Name *</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="e.g., Module 1 Slides" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="private">Private</SelectItem>
+                    <SelectItem value="public">Public</SelectItem>
+                    <SelectItem value="preview">Preview</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Public files are visible to enrolled students
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {sections.length > 0 && (
+            <FormField
+              control={form.control}
+              name="sectionId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Section (Optional)</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a section" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {sections.map((section) => (
+                        <SelectItem key={section.id} value={section.id}>
+                          {section.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Organize files by section
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          <FormField
+            control={form.control}
+            name="order"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Display Order</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Lower numbers appear first
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  className="min-h-20 resize-none"
+                  placeholder="Brief description of this file..."
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              form.reset();
+              setSelectedFile(null);
+            }}
+            disabled={uploading}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={uploading || !selectedFile}>
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              "Upload File"
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}

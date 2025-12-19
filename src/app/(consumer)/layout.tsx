@@ -14,7 +14,7 @@ export default function ConsumerLayout({
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
       <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-6">{children}</main>
+      <main className="flex-grow container mx-auto px-8 py-6">{children}</main>
       <Footer />
     </div>
   )

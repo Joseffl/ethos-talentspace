@@ -5,6 +5,8 @@ import { CourseProductTable } from "./courseProduct";
 import { User } from "lucide-react";
 import { UserCourseAccessTable } from "./userCourseAccess";
 import { CourseSectionTable } from "./courseSection";
+import { CourseFileTable } from "./courseFile"; 
+
 
 export const CourseTable = pgTable("courses", {
     id,
@@ -17,5 +19,6 @@ export const CourseTable = pgTable("courses", {
 export const CourseRelationships = relations(CourseTable, ({ many}) => ({
     courseProducts: many(CourseProductTable),
     userCourseAccesses: many(UserCourseAccessTable),
-    courseSections: many(CourseSectionTable)
+    courseSections: many(CourseSectionTable),
+    courseFiles: many(CourseFileTable), 
 })) 

@@ -3,6 +3,7 @@ import { createdAt, id, updatedAt } from "../schemaHelpers"
 import { CourseTable } from "./course"
 import { relations } from "drizzle-orm"
 import { LessonTable } from "./lesson"
+import { CourseFileTable } from "./courseFile"
 
 export const courseSectionStatuses = ["public", "private"] as const
 export type CourseSectionStatus = (typeof courseSectionStatuses)[number]
@@ -31,5 +32,6 @@ export const CourseSectionRelationships = relations(
       references: [CourseTable.id],
     }),
     lessons: many(LessonTable),
+    files: many(CourseFileTable),
   })
 )

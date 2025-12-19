@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DialogTrigger } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { db } from "@/drizzle/db"
-import { CourseSectionTable, CourseTable, LessonTable } from "@/drizzle/schema"
+import { CourseSectionTable, CourseTable, LessonTable, CourseFileTable } from "@/drizzle/schema"
 import { CourseForm } from "@/features/courses/components/CourseForm"
 import { getCourseIdTag } from "@/features/courses/db/cache/courses"
 import { SectionFormDialog } from "@/features/courseSections/components/SectionFormDialog"
@@ -13,6 +13,8 @@ import { getCourseSectionCourseTag } from "@/features/courseSections/db/cache"
 import { LessonFormDialog } from "@/features/lessons/components/LessonFormDialog"
 import { SortableLessonList } from "@/features/lessons/components/SortableLessonList"
 import { getLessonCourseTag } from "@/features/lessons/db/cache/lessons"
+import { R2FileUploadForm } from "@/features/courses/components/R2FileUploadForm"
+import { CourseFilesList } from "@/features/courses/components/CourseFilesList"
 import { cn } from "@/lib/utils"
 import { asc, eq } from "drizzle-orm"
 import { EyeClosed, PlusIcon } from "lucide-react"
@@ -35,8 +37,10 @@ export default async function EditCoursePage({
       <Tabs defaultValue="lessons">
         <TabsList>
           <TabsTrigger value="lessons">Lessons</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="details">Details</TabsTrigger>
         </TabsList>
+
         <TabsContent value="lessons" className="flex flex-col gap-2">
           <Card>
             <CardHeader className="flex items-center flex-row justify-between">
@@ -88,6 +92,31 @@ export default async function EditCoursePage({
             </Card>
           ))}
         </TabsContent>
+
+        {/* Files Tab */}
+        <TabsContent value="files" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Course Files</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <R2FileUploadForm 
+                courseId={course.id}
+                sections={course.courseSections}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Uploaded Files</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CourseFilesList courseId={course.id} files={course.courseFiles || []} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="details">
           <Card>
             <CardHeader>
@@ -109,25 +138,18 @@ async function getCourse(id: string) {
   )
 
   return db.query.CourseTable.findFirst({
-    columns: { id: true, name: true, description: true },
     where: eq(CourseTable.id, id),
     with: {
       courseSections: {
         orderBy: asc(CourseSectionTable.order),
-        columns: { id: true, status: true, name: true },
         with: {
           lessons: {
             orderBy: asc(LessonTable.order),
-            columns: {
-              id: true,
-              name: true,
-              status: true,
-              description: true,
-              youtubeVideoId: true,
-              sectionId: true,
-            },
           },
         },
+      },
+      courseFiles: {
+        orderBy: asc(CourseFileTable.order),
       },
     },
   })
