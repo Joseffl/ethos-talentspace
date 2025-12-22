@@ -189,7 +189,7 @@ function HeroUnauthenticated() {
               className="px-6 py-3 bg-white text-[#1f8a26] rounded-lg font-semibold hover:bg-gray-100 transition-colors"
               asChild
             >
-              <SignUpButton mode="modal">Get Started Free</SignUpButton>
+              <SignUpButton mode="modal" >Get Started Free</SignUpButton>
             </Button>
             <Button
               variant="outline"
@@ -460,7 +460,7 @@ function CTAUnauthenticated() {
         className="px-8 py-3 bg-white text-[#28ac30] rounded-lg font-semibold hover:bg-gray-100 transition-colors"
         asChild
       >
-        <SignUpButton mode="modal">Get Started Free</SignUpButton>
+        <SignUpButton mode="modal" >Get Started Free</SignUpButton>
       </Button>
     </section>
   );

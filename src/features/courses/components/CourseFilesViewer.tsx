@@ -21,7 +21,7 @@ interface CourseFile {
   fileName: string;
   fileType: string;
   fileSize: number;
-  downloadable?: boolean; // NEW
+  downloadable?: boolean;
 }
 
 interface CourseFilesViewerProps {
@@ -64,41 +64,45 @@ export function CourseFilesViewer({ courseId, files }: CourseFilesViewerProps) {
         {files.map((file) => (
           <div
             key={file.id}
-            className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
             onClick={() => handleOpenFile(file)}
           >
-            <div className="flex items-center gap-3 flex-1">
-              {getFileIcon(file.fileType)}
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="flex-shrink-0 mt-0.5">
+                {getFileIcon(file.fileType)}
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{file.name}</p>
+                <p className="font-medium break-all ">{file.name}</p>
                 {file.description && (
-                  <p className="text-sm text-muted-foreground truncate">
+                  <p className="text-sm text-muted-foreground break-words mt-1">
                     {file.description}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground break-all mt-1">
                   {file.fileName} • {formatFileSize(file.fileSize)}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:flex-shrink-0 sm:ml-4">
               <Button
                 size="sm"
                 variant="default"
+                className="flex-1 sm:flex-initial"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleOpenFile(file);
                 }}
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Open
+                <ExternalLink className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Open</span>
               </Button>
 
               {file.downloadable && (
                 <Button
                   size="sm"
                   variant="outline"
+                  className="flex-1 sm:flex-initial"
                   onClick={async (e) => {
                     e.stopPropagation();
                     const res = await fetch(`/api/courses/${courseId}/files/${file.id}/download`);
@@ -106,8 +110,8 @@ export function CourseFilesViewer({ courseId, files }: CourseFilesViewerProps) {
                     window.open(url, "_blank");
                   }}
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
+                  <Download className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Download</span>
                 </Button>
               )}
             </div>
@@ -116,12 +120,14 @@ export function CourseFilesViewer({ courseId, files }: CourseFilesViewerProps) {
       </div>
 
       <Dialog open={!!selectedFile} onOpenChange={() => setSelectedFile(null)}>
-        <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0">
-          <div className="px-6 py-4 border-b flex items-center justify-between">
+        <DialogContent className="max-w-[95vw] w-full h-[95vh] flex flex-col p-0">
+          <div className="px-4 md:px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-lg font-semibold truncate">{selectedFile?.name}</DialogTitle>
+              <DialogTitle className="text-base md:text-lg font-semibold break-words pr-4">
+                {selectedFile?.name}
+              </DialogTitle>
               {selectedFile?.description && (
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-xs md:text-sm text-muted-foreground break-words pr-4 mt-1">
                   {selectedFile.description}
                 </p>
               )}
@@ -268,35 +274,52 @@ function SecurePDFViewer({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={handlePrevPage} disabled={currentPage === 1}>
-            Previous
+      {/* PDF Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-3 md:px-4 py-3 border-b bg-gray-50 flex-shrink-0">
+        <div className="flex items-center justify-center sm:justify-start gap-2">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handlePrevPage} 
+            disabled={currentPage === 1}
+            className="flex-1 sm:flex-initial"
+          >
+            <span className="hidden sm:inline">Previous</span>
+            <span className="sm:hidden">Prev</span>
           </Button>
-          <span className="text-sm px-3">
-            Page {currentPage} of {numPages}
+          <span className="text-xs sm:text-sm px-2 whitespace-nowrap">
+            {currentPage} / {numPages}
           </span>
-          <Button size="sm" variant="outline" onClick={handleNextPage} disabled={currentPage === numPages}>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleNextPage} 
+            disabled={currentPage === numPages}
+            className="flex-1 sm:flex-initial"
+          >
             Next
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={handleZoomOut}>
+        <div className="flex items-center justify-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleZoomOut} className="w-10">
             -
           </Button>
-          <span className="text-sm px-3">{Math.round(scale * 100)}%</span>
-          <Button size="sm" variant="outline" onClick={handleZoomIn}>
+          <span className="text-xs sm:text-sm px-2 min-w-[60px] text-center">
+            {Math.round(scale * 100)}%
+          </span>
+          <Button size="sm" variant="outline" onClick={handleZoomIn} className="w-10">
             +
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-gray-100 p-4">
+      {/* PDF Canvas */}
+      <div className="flex-1 overflow-auto bg-gray-100 p-2 md:p-4">
         <div className="flex justify-center">
           <canvas
             id="pdf-canvas"
-            className="shadow-lg bg-white"
+            className="shadow-lg bg-white max-w-full"
             onContextMenu={handleContextMenu}
             style={{ userSelect: "none" }}
           />
