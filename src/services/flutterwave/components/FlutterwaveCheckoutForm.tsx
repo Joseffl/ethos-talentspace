@@ -46,7 +46,7 @@ export function FlutterwaveCheckoutForm({
       <div className="mb-4">
         <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
         <p className="text-gray-600 mb-4">{product.description}</p>
-        <p className="text-3xl font-bold text-blue-600">
+        <p className="text-3xl font-bold text-[#28ac30]">
           ${product.priceInDollars.toFixed(2)}
         </p>
       </div>
@@ -60,7 +60,7 @@ export function FlutterwaveCheckoutForm({
       <button
         onClick={handleCheckout}
         disabled={isLoading}
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+        className="w-full bg-[#28ac30] text-white py-3 rounded-lg font-semibold hover:bg-[#229a28] disabled:bg-gray-400 transition-colors"
       >
         {isLoading ? "Processing..." : "Proceed to Payment"}
       </button>

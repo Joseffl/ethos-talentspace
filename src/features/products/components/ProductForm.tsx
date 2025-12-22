@@ -67,7 +67,7 @@ export function ProductForm({
       courseIds: [],
       imageUrl: "",
       priceInDollars: 0,
-      status: "private",
+      status: "public",
       categoryId: null,
       prerequisites: [],
       learningOutcomes: [],

@@ -7,6 +7,7 @@
 **/.classpath
 **/.dockerignore
 **/.env
+**/.env.local
 **/.git
 **/.gitignore
 **/.project
@@ -37,3 +38,5 @@ README.md
   .next
   .git
   .env.local
+  npm-debug.log
+.DS_Store

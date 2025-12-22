@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, integer, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { createdAt, id, updatedAt } from "../schemaHelpers";
 import { relations } from "drizzle-orm";
 import { CourseTable } from "./course";
@@ -13,13 +13,12 @@ export const CourseFileTable = pgTable("course_files", {
   name: text().notNull(),
   description: text(),
   
-  // R2 Storage info
-  storageKey: text("storage_key").notNull(), // Path in R2 bucket
-  fileUrl: text("file_url").notNull(), // Public/signed URL
+  storageKey: text("storage_key").notNull(), 
+  fileUrl: text("file_url").notNull(), 
   
   fileName: text("file_name").notNull(),
-  fileType: text("file_type").notNull(), // "pdf", "pptx", "docx", etc.
-  fileSize: integer("file_size").notNull(), // in bytes
+  fileType: text("file_type").notNull(), 
+  fileSize: integer("file_size").notNull(), 
   mimeType: text("mime_type").notNull(),
   
   order: integer().notNull().default(0),
@@ -34,6 +33,7 @@ export const CourseFileTable = pgTable("course_files", {
   
   createdAt,
   updatedAt,
+  downloadable: boolean("downloadable").default(false).notNull(),
 });
 
 export const CourseFileRelationships = relations(CourseFileTable, ({ one }) => ({

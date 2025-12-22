@@ -25,7 +25,7 @@ import {
 import { lessonSchema } from "../schemas/lessons"
 import { Textarea } from "@/components/ui/textarea"
 import { createLesson, updateLesson } from "../actions/lessons"
-import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer"
+import { BunnyVideoPlayer } from "./BunnyVideoPlayer"
 import { toast } from "sonner"
 
 export function LessonForm({
@@ -69,11 +69,11 @@ export function LessonForm({
     } else {
       toast.success(data.message || "Course created successfully!")
       form.reset()
+      if (onSuccess) onSuccess()
     }
   }
 
   const videoId = form.watch("youtubeVideoId")
-  console.log(videoId)
 
   return (
     <Form {...form}>
@@ -82,6 +82,7 @@ export function LessonForm({
         className="flex gap-6 flex-col @container"
       >
         <div className="grid grid-cols-1 @lg:grid-cols-2 gap-6">
+          {/* Name Field */}
           <FormField
             control={form.control}
             name="name"
@@ -98,6 +99,8 @@ export function LessonForm({
               </FormItem>
             )}
           />
+
+          {/* YouTube Video ID */}
           <FormField
             control={form.control}
             name="youtubeVideoId"
@@ -105,70 +108,76 @@ export function LessonForm({
               <FormItem>
                 <FormLabel>
                   <RequiredLabelIcon />
-                  YouTube Video Id
+                  Video Id
                 </FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} placeholder="1bb5747a-5c91-4846-acb4-ed9f6cbbbb41" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {/* Section */}
           <FormField
             control={form.control}
             name="sectionId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Section</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
+                <FormControl>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select a section" />
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {sections.map(section => (
-                      <SelectItem key={section.id} value={section.id}>
-                        {section.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      {sections.map(section => (
+                        <SelectItem key={section.id} value={section.id}>
+                          {section.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {/* Status */}
           <FormField
             control={form.control}
             name="status"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
+                <FormControl>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {lessonStatuses.map(status => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      {lessonStatuses.map(status => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
+
+        {/* Description */}
         <FormField
           control={form.control}
           name="description"
@@ -186,14 +195,17 @@ export function LessonForm({
             </FormItem>
           )}
         />
+
         <div className="self-end">
           <Button disabled={form.formState.isSubmitting} type="submit">
             Save
           </Button>
         </div>
+
+        {/* Video Preview */}
         {videoId && (
           <div className="aspect-video">
-            <YouTubeVideoPlayer videoId={videoId} />
+            <BunnyVideoPlayer videoId={videoId} />
           </div>
         )}
       </form>

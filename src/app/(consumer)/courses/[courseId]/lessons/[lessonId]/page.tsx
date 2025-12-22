@@ -11,6 +11,7 @@ import {
 import { wherePublicCourseSections } from "@/features/courseSections/permissions/sections"
 import { updateLessonCompleteStatus } from "@/features/lessons/actions/userLessonComplete"
 import { YouTubeVideoPlayer } from "@/features/lessons/components/YouTubeVideoPlayer"
+import { BunnyVideoPlayer } from "@/features/lessons/components/BunnyVideoPlayer"
 import { getLessonIdTag } from "@/features/lessons/db/cache/lessons"
 import { getUserLessonCompleteIdTag } from "@/features/lessons/db/cache/userLessonComplete"
 import {
@@ -75,9 +76,14 @@ async function SuspenseBoundary({
 
   return (
     <div className="my-4 flex flex-col gap-4">
+      <div className="flex justify-start mb-4">
+        <Link href={`/courses/${courseId}`}>
+          <Button variant="outline">Back to Course</Button>
+        </Link>
+      </div>
       <div className="aspect-video">
         {canView ? (
-          <YouTubeVideoPlayer
+          <BunnyVideoPlayer
             videoId={lesson.youtubeVideoId}
             onFinishedVideo={
               !isLessonComplete && canUpdateCompletionStatus

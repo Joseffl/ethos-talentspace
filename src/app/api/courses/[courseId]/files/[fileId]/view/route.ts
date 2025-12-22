@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/services/clerk";
 import { db } from "@/drizzle/db";
-import { CourseFileTable, CourseProductTable, UserCourseAccessTable } from "@/drizzle/schema";
+import { CourseFileTable } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { getSignedDownloadUrl } from "@/lib/r2";
+import { r2Client } from "@/lib/r2"; 
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 
 export async function GET(
   request: NextRequest,
@@ -17,7 +18,6 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user has access to this COURSE (not product)
     const hasAccess = await db.query.UserCourseAccessTable.findFirst({
       where: (access, { and, eq }) =>
         and(
@@ -42,13 +42,37 @@ export async function GET(
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    // Generate signed URL (expires in 1 hour)
-    const signedUrl = await getSignedDownloadUrl(file.storageKey, 3600);
+    // Fetch the actual file from R2
+    const command = new GetObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME!,
+      Key: file.storageKey,
+    });
 
-    // Redirect to view file
-return NextResponse.json({
-  url: signedUrl,
-});  } catch (error) {
+    const response = await r2Client.send(command);
+
+    if (!response.Body) {
+      return NextResponse.json({ error: "File not found in storage" }, { status: 404 });
+    }
+
+    const stream = response.Body as any;
+    const chunks: Uint8Array[] = [];
+    
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    
+    const buffer = Buffer.concat(chunks);
+
+    return new NextResponse(buffer, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline',
+        'Cache-Control': 'private, no-cache',
+        'Content-Length': buffer.length.toString(),
+      },
+    });
+
+  } catch (error) {
     console.error("View error:", error);
     return NextResponse.json(
       { error: "Failed to load file" },

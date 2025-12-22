@@ -8,6 +8,7 @@ import { Upload, X, FileText, File as FileIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -32,6 +33,7 @@ const fileUploadSchema = z.object({
   order: z.number().min(0),
   status: z.enum(["public", "private", "preview"]),
   sectionId: z.string().optional(),
+  downloadable: z.boolean(), // NEW FIELD
 });
 
 interface R2FileUploadFormProps {
@@ -55,8 +57,9 @@ export function R2FileUploadForm({
       name: "",
       description: "",
       order: 0,
-      status: "private",
+      status: "public",
       sectionId: undefined,
+      downloadable: false, // Default to NOT downloadable (secure)
     },
   });
 
@@ -64,14 +67,12 @@ export function R2FileUploadForm({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (50MB max)
     const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error("File size must be less than 50MB");
       return;
     }
 
-    // Validate file type
     const allowedExtensions = ["pdf", "pptx", "ppt", "docx", "doc", "xlsx", "xls", "zip"];
     const extension = file.name.split(".").pop()?.toLowerCase();
     
@@ -82,7 +83,6 @@ export function R2FileUploadForm({
 
     setSelectedFile(file);
 
-    // Auto-fill name if empty
     if (!form.getValues("name")) {
       const nameWithoutExtension = file.name.replace(/\.[^/.]+$/, "");
       form.setValue("name", nameWithoutExtension);
@@ -126,7 +126,6 @@ export function R2FileUploadForm({
     setUploadProgress(0);
 
     try {
-      // Step 1: Get presigned upload URL from our API
       setUploadProgress(10);
       
       const urlResponse = await fetch("/api/get-upload-url", {
@@ -145,7 +144,6 @@ export function R2FileUploadForm({
 
       const { uploadUrl, key, fileUrl } = await urlResponse.json();
 
-      // Step 2: Upload directly to R2 using presigned URL
       setUploadProgress(20);
 
       const uploadResponse = await fetch(uploadUrl, {
@@ -162,7 +160,6 @@ export function R2FileUploadForm({
 
       setUploadProgress(70);
 
-      // Step 3: Save file metadata to database
       const savePayload = {
         ...values,
         storageKey: key,
@@ -171,6 +168,7 @@ export function R2FileUploadForm({
         fileSize: selectedFile.size,
         fileType: selectedFile.name.split(".").pop()?.toLowerCase() || "unknown",
         mimeType: selectedFile.type,
+        downloadable: values.downloadable, // Include downloadable flag
       };
 
       const saveResponse = await fetch(`/api/courses/${courseId}/files`, {
@@ -187,15 +185,12 @@ export function R2FileUploadForm({
 
       toast.success("File uploaded successfully!");
       
-      // Reset form
       form.reset();
       setSelectedFile(null);
       
-      // Call success callback if provided
       if (onSuccess) {
         onSuccess();
       } else {
-        // Reload page to show new file
         window.location.reload();
       }
     } catch (error: any) {
@@ -251,7 +246,6 @@ export function R2FileUploadForm({
             </label>
           )}
 
-          {/* Upload Progress */}
           {uploading && (
             <div className="mt-4">
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -378,6 +372,31 @@ export function R2FileUploadForm({
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* NEW: Downloadable Toggle */}
+        <FormField
+          control={form.control}
+          name="downloadable"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  Allow Download
+                </FormLabel>
+                <FormDescription>
+                  When enabled, students can download this file. 
+                  When disabled, files are view-only (secure PDF viewer).
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
             </FormItem>
           )}
         />

@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     },
   },
 
+  output: 'standalone',
+
+
   images: {
     remotePatterns: [
       {
@@ -22,6 +25,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'i.ibb.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.magsengineeringlimited.com',
       },
     ],
   },

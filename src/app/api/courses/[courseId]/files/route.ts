@@ -6,7 +6,6 @@ import { eq } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { getCourseIdTag } from "@/features/courses/db/cache/courses";
 
-// Create new file record
 export async function POST(
   request: NextRequest,
   { params }: { params: { courseId: string } }
@@ -33,7 +32,6 @@ export async function POST(
       sectionId,
     } = body;
 
-    // Insert file record
     const [file] = await db
       .insert(CourseFileTable)
       .values({
@@ -49,6 +47,8 @@ export async function POST(
         mimeType,
         order: order || 0,
         status: status || "draft",
+        downloadable: body.downloadable ?? false,   
+
       })
       .returning();
 
@@ -65,7 +65,6 @@ export async function POST(
   }
 }
 
-// Get all files for a course
 export async function GET(
   request: NextRequest,
   { params }: { params: { courseId: string } }

@@ -309,7 +309,7 @@ async function AuthenticatedContent() {
                     })}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="line-clamp-3" title={course.description}>
+                <CardContent className="line-clamp-3 mb-4" title={course.description}>
                   {course.description}
                 </CardContent>
                 <div className="flex-grow" />
@@ -319,7 +319,7 @@ async function AuthenticatedContent() {
                   </Button>
                 </CardFooter>
                 <div
-                  className="bg-accent h-2 -mt-2"
+                  className="bg-[#28ac30] h-2 -mt-2"
                   style={{
                     width: `${course.lessonsCount > 0 ? (course.lessonsComplete / course.lessonsCount) * 100 : 0}%`,
                   }}

@@ -1,21 +1,5 @@
-# services:
-#   db:
-#     image: postgres:latest
-#     hostname: localhost
-#     ports:
-#       - "5432:5432"
-#     environment:
-#       - POSTGRES_PASSWORD=${DB_PASSWORD}
-#       - POSTGRES_USER=${DB_USER}
-#       - POSTGRES_DB=${DB_NAME}
-#     volumes:
-#       - pgdata:/var/lib/postgresql/data
-#     healthcheck:
-#       test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 5
 
+# services:
 #   frontend:
 #     build:
 #       context: .
@@ -35,29 +19,24 @@
 #       - FLUTTERWAVE_SECRET_KEY=${FLUTTERWAVE_SECRET_KEY}
 #       - FLUTTERWAVE_WEBHOOK_SECRET=${FLUTTERWAVE_WEBHOOK_SECRET}
 #       - NEXT_PUBLIC_SERVER_URL=http://localhost:3000
-#       - DB_HOST=db
-#       - DB_PASSWORD=${DB_PASSWORD}
-#       - DB_USER=${DB_USER}
-#       - DB_NAME=${DB_NAME}
-#     depends_on:
-#       db:
-#         condition: service_healthy
+#       - DATABASE_URL=${DATABASE_URL}
 #     volumes:
 #       - .:/app
 #       - /app/node_modules
 #     command: sh -c "sleep 5 && npm run db:migrate && npm run dev"
 
-# volumes:
-#   pgdata:
+version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  dashboard:
+    build: .
+    container_name: dashboard_app
+    restart: unless-stopped
     ports:
-      - "3001:3000"
+      - "3000:3000"
     environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
       - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
       - CLERK_WEBHOOK_SECRET=${CLERK_WEBHOOK_SECRET}
@@ -69,9 +48,15 @@ services:
       - NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY=${NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY}
       - FLUTTERWAVE_SECRET_KEY=${FLUTTERWAVE_SECRET_KEY}
       - FLUTTERWAVE_WEBHOOK_SECRET=${FLUTTERWAVE_WEBHOOK_SECRET}
-      - NEXT_PUBLIC_SERVER_URL=http://localhost:3000
-      - DATABASE_URL=${DATABASE_URL}
-    volumes:
-      - .:/app
-      - /app/node_modules
-    command: sh -c "sleep 5 && npm run db:migrate && npm run dev"
+      # Remove NEXT_PUBLIC_SERVER_URL or set dynamically
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL}
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
