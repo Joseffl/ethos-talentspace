@@ -7,20 +7,34 @@ import { deleteFromR2 } from "@/lib/r2";
 import { revalidateTag } from "next/cache";
 import { getCourseIdTag } from "@/features/courses/db/cache/courses";
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { courseId: string; fileId: string } }
-) {
+interface RouteParams {
+  courseId: string;
+  fileId: string;
+}
+
+export async function DELETE(request: NextRequest) {
   try {
     const { userId } = await getCurrentUser();
-
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { courseId, fileId } = request.nextUrl.pathname
+      .split("/")
+      .slice(-3)
+      .reduce((acc, val, i, arr) => {
+        if (i === arr.length - 2) acc.courseId = val;
+        if (i === arr.length - 1) acc.fileId = val;
+        return acc;
+      }, {} as RouteParams);
+
+    if (!courseId || !fileId) {
+      return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
+    }
+
     // Get file info
     const file = await db.query.CourseFileTable.findFirst({
-      where: eq(CourseFileTable.id, params.fileId),
+      where: eq(CourseFileTable.id, fileId),
     });
 
     if (!file) {
@@ -31,17 +45,14 @@ export async function DELETE(
     await deleteFromR2(file.storageKey);
 
     // Delete from database
-    await db.delete(CourseFileTable).where(eq(CourseFileTable.id, params.fileId));
+    await db.delete(CourseFileTable).where(eq(CourseFileTable.id, fileId));
 
     // Revalidate cache
-    revalidateTag(getCourseIdTag(params.courseId));
+    revalidateTag(getCourseIdTag(courseId));
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete file" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to delete file" }, { status: 500 });
   }
 }
