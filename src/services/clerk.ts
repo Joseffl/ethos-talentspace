@@ -129,3 +129,14 @@ async function getUser(id: string) {
     where: eq(UserTable.id, id),
   })
 }
+
+export async function syncClerkUserMetadata(user: { id: string; clerkUserId: string; role: UserRole }) {
+  const client = await clerkClient()
+  
+  return await client.users.updateUserMetadata(user.clerkUserId, {
+    publicMetadata: {
+      dbId: user.id,
+      role: user.role,
+    },
+  })
+}

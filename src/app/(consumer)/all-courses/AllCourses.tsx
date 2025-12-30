@@ -78,7 +78,7 @@ export default function AllCourses({
       ) : (
         <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-300">
           <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-gray-600">No courses found matching "{search}"</h4>
+          <h4 className="text-lg font-medium text-gray-600">No courses found</h4>
           <p className="text-gray-400">Try adjusting your search terms.</p>
         </div>
       )}
