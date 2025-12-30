@@ -1,5 +1,13 @@
 import { db } from "@/drizzle/db";
-import { ProductTable, CategoryTable, CourseTable, CourseSectionTable, LessonTable, UserCourseAccessTable, UserLessonCompleteTable } from "@/drizzle/schema";
+import {
+  ProductTable,
+  CategoryTable,
+  CourseTable,
+  CourseSectionTable,
+  LessonTable,
+  UserCourseAccessTable,
+  UserLessonCompleteTable,
+} from "@/drizzle/schema";
 import { getProductGlobalTag } from "@/features/products/db/cache";
 import { wherePublicProducts } from "@/features/products/permissions/products";
 import { getUserCourseAccessUserTag } from "@/features/courses/db/cache/userCourseAccess";
@@ -27,8 +35,16 @@ import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { AnimatedStat } from "@/components/AnimatedStat";
 import { getCurrentUser } from "@/services/clerk";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { formatPlural } from "@/lib/formatters";
+import { Suspense } from "react";
 
 interface PageProps {
   searchParams: Promise<{
@@ -46,14 +62,22 @@ export default async function HomePage({ searchParams }: PageProps) {
   return (
     <>
       <SignedIn>
-        <HeroAuthenticated />
+        <Suspense
+          fallback={
+            <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-2xl mb-16" />
+          }
+        >
+          <HeroAuthenticated />
+        </Suspense>
       </SignedIn>
       <SignedOut>
         <HeroUnauthenticated />
       </SignedOut>
 
       <SignedIn>
-        <AuthenticatedContent />
+        <Suspense fallback={<StatsAndCoursesSkeleton />}>
+          <AuthenticatedContent />
+        </Suspense>
       </SignedIn>
       <SignedOut>
         <UnauthenticatedContent />
@@ -61,9 +85,7 @@ export default async function HomePage({ searchParams }: PageProps) {
 
       <section id="featured" className="mb-16">
         <div className="flex items-center justify-between mb-8">
-          <h3 className="text-2xl font-bold text-gray-900">
-            Featured Courses
-          </h3>
+          <h3 className="text-2xl font-bold text-gray-900">Featured Courses</h3>
         </div>
 
         {featuredProducts.length === 0 ? (
@@ -182,14 +204,19 @@ function HeroUnauthenticated() {
             Master Engineering Skills Online
           </h1>
           <p className="text-xl mb-6 text-green-100">
-            Learn from industry experts and advance your career with cutting-edge engineering courses
+            Learn from industry experts and advance your career with
+            cutting-edge engineering courses
           </p>
           <div className="flex flex-wrap gap-4">
             <Button
               className="px-6 py-3 bg-white text-[#1f8a26] rounded-lg font-semibold hover:bg-gray-100 transition-colors"
               asChild
             >
-              <SignUpButton mode="modal" >Get Started Free</SignUpButton>
+              <SignUpButton mode="modal" forceRedirectUrl="/">
+                <Button className="px-6 py-3 bg-white text-[#1f8a26] ...">
+                  Get Started
+                </Button>
+              </SignUpButton>
             </Button>
             <Button
               variant="outline"
@@ -214,10 +241,10 @@ function HeroUnauthenticated() {
 
 async function AuthenticatedContent() {
   const { userId } = await getCurrentUser();
-  
+
   const [userStats, userCourses] = await Promise.all([
     userId ? getUserStats(userId) : null,
-    userId ? getUserCoursesForHomepage(userId) : []
+    userId ? getUserCoursesForHomepage(userId) : [],
   ]);
 
   const stats = [
@@ -227,17 +254,17 @@ async function AuthenticatedContent() {
       icon: BookOpen,
       color: "bg-blue-500",
     },
-    { 
-      label: "Hours Learned", 
-      value: userStats?.hoursLearned.toString() || "0", 
-      icon: Clock, 
-      color: "bg-purple-500" 
+    {
+      label: "Hours Learned",
+      value: userStats?.hoursLearned.toString() || "0",
+      icon: Clock,
+      color: "bg-purple-500",
     },
-    { 
-      label: "Certificates", 
-      value: userStats?.certificates.toString() || "0", 
-      icon: Award, 
-      color: "bg-green-500" 
+    {
+      label: "Certificates",
+      value: userStats?.certificates.toString() || "0",
+      icon: Award,
+      color: "bg-green-500",
     },
     {
       label: "Avg Progress",
@@ -280,7 +307,7 @@ async function AuthenticatedContent() {
             View all <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
-        
+
         {userCourses.length === 0 ? (
           <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl p-8 text-center border border-gray-200">
             <BookOpen className="w-16 h-16 mx-auto text-gray-400 mb-4" />
@@ -288,7 +315,8 @@ async function AuthenticatedContent() {
               No courses enrolled yet
             </h4>
             <p className="text-gray-600 mb-4">
-              Start your learning journey by exploring our featured courses below
+              Start your learning journey by exploring our featured courses
+              below
             </p>
           </div>
         ) : (
@@ -309,19 +337,28 @@ async function AuthenticatedContent() {
                     })}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="line-clamp-3 mb-4" title={course.description}>
+                <CardContent
+                  className="line-clamp-3 mb-4"
+                  title={course.description}
+                >
                   {course.description}
                 </CardContent>
                 <div className="flex-grow" />
                 <CardFooter>
                   <Button asChild>
-                    <Link href={`/courses/${course.id}`}>Continue Learning</Link>
+                    <Link href={`/courses/${course.id}`}>
+                      Continue Learning
+                    </Link>
                   </Button>
                 </CardFooter>
                 <div
                   className="bg-[#28ac30] h-2 -mt-2"
                   style={{
-                    width: `${course.lessonsCount > 0 ? (course.lessonsComplete / course.lessonsCount) * 100 : 0}%`,
+                    width: `${
+                      course.lessonsCount > 0
+                        ? (course.lessonsComplete / course.lessonsCount) * 100
+                        : 0
+                    }%`,
                   }}
                 />
               </Card>
@@ -338,7 +375,8 @@ function UnauthenticatedContent() {
     {
       icon: Users,
       title: "Expert Instructors",
-      description: "Learn from industry professionals with real-world experience",
+      description:
+        "Learn from industry professionals with real-world experience",
     },
     {
       icon: Award,
@@ -410,19 +448,23 @@ function UnauthenticatedContent() {
             {
               step: "2",
               title: "Choose Your Course",
-              description: "Select from hundreds of expert-led engineering courses",
+              description:
+                "Select from hundreds of expert-led engineering courses",
             },
             {
               step: "3",
               title: "Start Learning",
-              description: "Study at your pace and earn recognized certificates",
+              description:
+                "Study at your pace and earn recognized certificates",
             },
           ].map((item, index) => (
             <div key={index} className="text-center">
               <div className="w-16 h-16 bg-[#28ac30] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg">
                 {item.step}
               </div>
-              <h4 className="font-semibold text-gray-900 mb-2 text-lg">{item.title}</h4>
+              <h4 className="font-semibold text-gray-900 mb-2 text-lg">
+                {item.title}
+              </h4>
               <p className="text-gray-600">{item.description}</p>
             </div>
           ))}
@@ -437,7 +479,8 @@ function CTAAuthenticated() {
     <section className="bg-gradient-to-r from-[#28ac30] to-[#1f8a26] rounded-2xl p-8 md:p-12 text-center text-white shadow-xl">
       <h3 className="text-3xl font-bold mb-4">Ready to start learning?</h3>
       <p className="text-xl text-green-100 mb-6 max-w-2xl mx-auto">
-        Join thousands of engineers advancing their careers with world-class courses and expert instruction.
+        Join thousands of engineers advancing their careers with world-class
+        courses and expert instruction.
       </p>
       <Link
         href="/all-courses"
@@ -454,14 +497,14 @@ function CTAUnauthenticated() {
     <section className="bg-gradient-to-r from-[#28ac30] to-[#1f8a26] rounded-2xl p-8 md:p-12 text-center text-white shadow-xl">
       <h3 className="text-3xl font-bold mb-4">Ready to start learning?</h3>
       <p className="text-xl text-green-100 mb-6 max-w-2xl mx-auto">
-        Join thousands of engineers advancing their careers with world-class courses and expert instruction.
+        Join thousands of engineers advancing their careers with world-class
+        courses and expert instruction.
       </p>
-      <Button
-        className="px-8 py-3 bg-white text-[#28ac30] rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-        asChild
-      >
-        <SignUpButton mode="modal" >Get Started Free</SignUpButton>
-      </Button>
+      <SignUpButton mode="modal" forceRedirectUrl="/">
+        <Button className="px-8 py-3 bg-white text-[#28ac30] rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+          Get Started
+        </Button>
+      </SignUpButton>
     </section>
   );
 }
@@ -507,13 +550,13 @@ async function getUserStats(userId: string) {
     .select({ count: countDistinct(UserCourseAccessTable.courseId) })
     .from(UserCourseAccessTable)
     .where(eq(UserCourseAccessTable.userId, userId))
-    .then(result => result[0]?.count || 0);
+    .then((result) => result[0]?.count || 0);
 
   const completedLessons = await db
     .select({ count: countDistinct(UserLessonCompleteTable.lessonId) })
     .from(UserLessonCompleteTable)
     .where(eq(UserLessonCompleteTable.userId, userId))
-    .then(result => result[0]?.count || 0);
+    .then((result) => result[0]?.count || 0);
 
   const hoursLearned = Math.round((completedLessons * 15) / 60);
 
@@ -552,19 +595,22 @@ async function getUserStats(userId: string) {
     .groupBy(CourseTable.id);
 
   const certificates = coursesProgress.filter(
-    course => course.totalLessons > 0 && course.completedLessons === course.totalLessons
+    (course) =>
+      course.totalLessons > 0 && course.completedLessons === course.totalLessons
   ).length;
 
-  const avgProgress = coursesProgress.length > 0
-    ? Math.round(
-        coursesProgress.reduce((sum, course) => {
-          const progress = course.totalLessons > 0 
-            ? (course.completedLessons / course.totalLessons) * 100 
-            : 0;
-          return sum + progress;
-        }, 0) / coursesProgress.length
-      )
-    : 0;
+  const avgProgress =
+    coursesProgress.length > 0
+      ? Math.round(
+          coursesProgress.reduce((sum, course) => {
+            const progress =
+              course.totalLessons > 0
+                ? (course.completedLessons / course.totalLessons) * 100
+                : 0;
+            return sum + progress;
+          }, 0) / coursesProgress.length
+        )
+      : 0;
 
   return {
     coursesEnrolled,
@@ -620,7 +666,7 @@ async function getUserCoursesForHomepage(userId: string) {
     .groupBy(CourseTable.id)
     .limit(3);
 
-  courses.forEach(course => {
+  courses.forEach((course) => {
     cacheTag(
       getCourseIdTag(course.id),
       getCourseSectionCourseTag(course.id),
@@ -629,4 +675,27 @@ async function getUserCoursesForHomepage(userId: string) {
   });
 
   return courses;
+}
+
+function StatsAndCoursesSkeleton() {
+  return (
+    <div className="space-y-16">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-32 bg-gray-100 rounded-xl animate-pulse" />
+        ))}
+      </section>
+      <section>
+        <div className="h-8 w-48 bg-gray-100 mb-8 rounded animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-64 bg-gray-100 rounded-xl animate-pulse"
+            />
+          ))}
+        </div>
+      </section>
+    </div>
+  );
 }

@@ -66,7 +66,7 @@ async function CourseGrid() {
       <div className="flex flex-col gap-2 items-start">
         You have no courses yet
         <Button asChild size="lg">
-          <Link href="/">Browse Courses</Link>
+          <Link href="/all-courses">Browse Courses</Link>
         </Button>
       </div>
     )

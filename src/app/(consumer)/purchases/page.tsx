@@ -35,7 +35,7 @@ async function SuspenseBoundary() {
       <div className="flex flex-col gap-2 items-start">
         You have made no purchases yet
         <Button asChild size="lg">
-          <Link href="/">Browse Courses</Link>
+          <Link href="/all-courses">Browse Courses</Link>
         </Button>
       </div>
     )

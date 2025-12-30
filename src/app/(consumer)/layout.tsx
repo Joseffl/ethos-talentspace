@@ -12,7 +12,7 @@ export default function ConsumerLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {children}
@@ -24,7 +24,7 @@ export default function ConsumerLayout({
 
 function Navbar() {
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow">
+    <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md shadow">
       <nav className="flex items-center justify-between container mx-auto px-4 h-14">
         <Link
           className="text-lg text-[#28ac30] font-bold hover:underline flex items-center"

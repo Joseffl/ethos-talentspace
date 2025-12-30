@@ -31,6 +31,12 @@ function Navbar() {
         <div className="flex items-center gap-4">
           <Link
             className="hover:bg-accent/10 flex items-center px-2 py-1 rounded-md"
+            href="/"
+          >
+            Home
+          </Link>
+          <Link
+            className="hover:bg-accent/10 flex items-center px-2 py-1 rounded-md"
             href="/admin/courses"
           >
             Courses
