@@ -61,7 +61,7 @@ export async function getCurrentUser({ allData = false } = {}) {
   const { userId, sessionClaims, redirectToSignIn } = await auth()
 
   if (userId == null) {
-    return { userId: null, role: null, user: undefined, redirectToSignIn }
+    return { userId: undefined, role: undefined, user: undefined, redirectToSignIn }
   }
 
   let dbId = sessionClaims?.dbId as string | undefined
@@ -69,13 +69,12 @@ export async function getCurrentUser({ allData = false } = {}) {
 
   if (!dbId) {
     const clerkUser = await currentUser()
-    if (!clerkUser) return { userId: null, role: null, user: undefined, redirectToSignIn }
+    if (!clerkUser) return { userId: undefined, role: undefined, user: undefined, redirectToSignIn }
 
     const primaryEmail = clerkUser.emailAddresses[0]?.emailAddress ?? ""
     const fullName = `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`.trim() || "New User"
 
     try {
-      // 1. We use a partial object cast if TS is being stubborn about the ID/Timestamps
       const [dbUser] = await db
         .insert(UserTable)
         .values({
@@ -99,13 +98,10 @@ export async function getCurrentUser({ allData = false } = {}) {
         dbId = dbUser.id
         role = dbUser.role
 
-        const client = await clerkClient()
-        // Use await here to ensure metadata is set before the user tries to navigate again
-        await client.users.updateUserMetadata(userId, {
-          publicMetadata: {
-            dbId: dbUser.id,
-            role: dbUser.role,
-          },
+        await syncClerkUserMetadata({
+          id: dbUser.id,
+          clerkUserId: userId,
+          role: dbUser.role
         })
       }
     } catch (error) {
@@ -115,8 +111,8 @@ export async function getCurrentUser({ allData = false } = {}) {
 
   return {
     clerkUserId: userId,
-    userId: dbId,
-    role: role,
+    userId: dbId ?? undefined,
+    role: role ?? undefined,
     user: allData && dbId != null ? await getUser(dbId) : undefined,
     redirectToSignIn,
   }

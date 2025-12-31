@@ -32,7 +32,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
     }
 
-    // Get file info
     const file = await db.query.CourseFileTable.findFirst({
       where: eq(CourseFileTable.id, fileId),
     });
@@ -41,13 +40,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    // Delete from R2
     await deleteFromR2(file.storageKey);
 
-    // Delete from database
     await db.delete(CourseFileTable).where(eq(CourseFileTable.id, fileId));
 
-    // Revalidate cache
     revalidateTag(getCourseIdTag(courseId));
 
     return NextResponse.json({ success: true });

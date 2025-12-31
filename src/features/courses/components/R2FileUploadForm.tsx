@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { useRouter } from "next/navigation";
 import {
   Form,
   FormControl,
@@ -59,7 +60,7 @@ export function R2FileUploadForm({
       order: 0,
       status: "public",
       sectionId: undefined,
-      downloadable: false, // Default to NOT downloadable (secure)
+      downloadable: false, 
     },
   });
 
@@ -115,8 +116,11 @@ export function R2FileUploadForm({
   const formatFileSize = (bytes: number) => {
     return (bytes / 1024 / 1024).toFixed(2) + " MB";
   };
+  const router = useRouter();
 
-  const onSubmit = async (values: z.infer<typeof fileUploadSchema>) => {
+
+
+ const onSubmit = async (values: z.infer<typeof fileUploadSchema>) => {
     if (!selectedFile) {
       toast.error("Please select a file");
       return;
@@ -126,72 +130,70 @@ export function R2FileUploadForm({
     setUploadProgress(0);
 
     try {
-      setUploadProgress(10);
-      
       const urlResponse = await fetch("/api/get-upload-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fileName: selectedFile.name,
           fileType: selectedFile.type,
+          fileSize: selectedFile.size,
           courseId,
         }),
       });
 
-      if (!urlResponse.ok) {
-        throw new Error("Failed to get upload URL");
-      }
-
+      if (!urlResponse.ok) throw new Error("Failed to get upload URL");
       const { uploadUrl, key, fileUrl } = await urlResponse.json();
 
-      setUploadProgress(20);
+      const uploadPromise = new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        });
 
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "PUT",
-        body: selectedFile,
-        headers: {
-          "Content-Type": selectedFile.type,
-        },
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
+          else reject(new Error("Upload to R2 failed"));
+        });
+
+        xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
+        
+        xhr.open("PUT", uploadUrl);
+        xhr.setRequestHeader("Content-Type", selectedFile.type);
+        xhr.send(selectedFile);
       });
 
-      if (!uploadResponse.ok) {
-        throw new Error("Failed to upload to R2");
-      }
+      await uploadPromise;
 
-      setUploadProgress(70);
-
-      const savePayload = {
-        ...values,
-        storageKey: key,
-        fileUrl: fileUrl,
-        fileName: selectedFile.name,
-        fileSize: selectedFile.size,
-        fileType: selectedFile.name.split(".").pop()?.toLowerCase() || "unknown",
-        mimeType: selectedFile.type,
-        downloadable: values.downloadable, // Include downloadable flag
-      };
-
+      // 3. Save metadata to your Database
       const saveResponse = await fetch(`/api/courses/${courseId}/files`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(savePayload),
+        body: JSON.stringify({
+          ...values,
+          storageKey: key,
+          fileUrl: fileUrl,
+          fileName: selectedFile.name,
+          fileSize: selectedFile.size,
+          fileType: selectedFile.name.split(".").pop()?.toLowerCase() || "unknown",
+          mimeType: selectedFile.type,
+        }),
       });
 
-      if (!saveResponse.ok) {
-        throw new Error("Failed to save file metadata");
-      }
-
-      setUploadProgress(100);
+      if (!saveResponse.ok) throw new Error("Failed to save file to database");
 
       toast.success("File uploaded successfully!");
       
       form.reset();
       setSelectedFile(null);
       
+      router.refresh(); 
+
       if (onSuccess) {
         onSuccess();
-      } else {
-        window.location.reload();
       }
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -205,7 +207,6 @@ export function R2FileUploadForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* File Upload Area */}
         <div className="border-2 border-dashed rounded-lg p-8 text-center bg-gray-50">
           <input
             type="file"
@@ -376,7 +377,6 @@ export function R2FileUploadForm({
           )}
         />
 
-        {/* NEW: Downloadable Toggle */}
         <FormField
           control={form.control}
           name="downloadable"
