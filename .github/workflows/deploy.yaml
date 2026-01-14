@@ -34,7 +34,7 @@ jobs:
             # General & Database
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             NODE_ENV=production
-            NEXT_PUBLIC_API_URL=https://dashboard.magsengineeringlimited.com
+            NEXT_PUBLIC_SERVER_URL=https://dashboard.magsengineeringlimited.com
             ARCJET_KEY=${{ secrets.ARCJET_KEY }}
 
             # Clerk Authentication
