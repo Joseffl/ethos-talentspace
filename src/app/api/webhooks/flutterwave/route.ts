@@ -23,7 +23,9 @@ export async function GET(request: NextRequest) {
     redirectUrl = "/products/purchase-failure"
   }
 
-  return NextResponse.redirect(new URL(redirectUrl, request.url))
+  const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || request.url
+  return NextResponse.redirect(new URL(redirectUrl, baseUrl))
+
 }
 
 export async function POST(request: NextRequest) {
