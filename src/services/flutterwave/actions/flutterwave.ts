@@ -67,6 +67,7 @@
 "use server";
 
 import { env as serverEnv } from "@/data/env/server";
+import { env as clientEnv } from "@/data/env/client";
 import axios from "axios";
 
 type Product = {
@@ -91,7 +92,7 @@ export async function getFlutterwavePaymentLink(product: Product, user: User) {
     tx_ref: `${product.id}-${user.id}-${Date.now()}`,
     amount,
     currency: "USD",
-    redirect_url: `${baseUrl}/api/webhooks/flutterwave`,
+    redirect_url: `${clientEnv.NEXT_PUBLIC_SERVER_URL}/api/webhooks/flutterwave`,
     customer: {
       email: user.email,
       name: user.id,
