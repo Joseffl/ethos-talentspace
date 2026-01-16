@@ -2,9 +2,10 @@
 
 import { useState } from "react"
 import { getFlutterwavePaymentLink } from "../actions/flutterwave"
+import { formatPrice } from "@/lib/formatters" 
 
 type ProductProps = {
-  priceInDollars: number
+  priceInNaira: number
   name: string
   id: string
   imageUrl: string
@@ -47,7 +48,7 @@ export function FlutterwaveCheckoutForm({
         <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
         <p className="text-gray-600 mb-4">{product.description}</p>
         <p className="text-3xl font-bold text-[#28ac30]">
-          ${product.priceInDollars.toFixed(2)}
+          {formatPrice(product.priceInNaira)}
         </p>
       </div>
 

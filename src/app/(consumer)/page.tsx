@@ -518,7 +518,7 @@ async function getFeaturedProducts() {
       id: true,
       name: true,
       description: true,
-      priceInDollars: true,
+      priceInNaira: true,
       imageUrl: true,
     },
     where: wherePublicProducts,

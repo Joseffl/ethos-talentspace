@@ -116,7 +116,7 @@ async function getProducts() {
           id: DbProductTable.id,
           name: DbProductTable.name,
           status: DbProductTable.status,
-          priceInDollars: DbProductTable.priceInDollars,
+          priceInNaira: DbProductTable.priceInNaira,
           description: DbProductTable.description,
           imageUrl: DbProductTable.imageUrl,
           coursesCount: countDistinct(CourseProductTable.courseId),

@@ -61,11 +61,11 @@ export default async function ProductPage(props: {
       <Suspense
         fallback={
           <div className="text-xl">
-            {formatPrice(product.priceInDollars)}
+            {formatPrice(product.priceInNaira)}
           </div>
         }
       >
-        <Price price={product.priceInDollars} />
+        <Price price={product.priceInNaira} />
       </Suspense>
 
       <h1 className="text-4xl font-semibold">{product.name}</h1>
@@ -243,7 +243,7 @@ async function getPublicProduct(id: string) {
       id: true,
       name: true,
       description: true,
-      priceInDollars: true,
+      priceInNaira: true,
       imageUrl: true,
       prerequisites: true, 
       learningOutcomes: true, 

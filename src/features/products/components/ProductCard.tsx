@@ -15,13 +15,13 @@ export function ProductCard({
   id,
   imageUrl,
   name,
-  priceInDollars,
+  priceInNaira,
   description,
 }: {
   id: string
   imageUrl: string
   name: string
-  priceInDollars: number
+  priceInNaira: number
   description: string
 }) {
   return (
@@ -31,7 +31,7 @@ export function ProductCard({
       </div>
       <CardHeader className="space-y-0">
         <CardDescription>
-          {formatPrice(priceInDollars)}
+          {formatPrice(priceInNaira)}
         </CardDescription>
         <CardTitle className="text-xl">{name}</CardTitle>
       </CardHeader>

@@ -39,7 +39,7 @@ export function ProductForm({
     id: string
     name: string
     description: string
-    priceInDollars: number
+    priceInNaira: number
     imageUrl: string
     status: ProductStatus
     courseIds: string[]
@@ -66,7 +66,7 @@ export function ProductForm({
       description: "",
       courseIds: [],
       imageUrl: "",
-      priceInDollars: 0,
+      priceInNaira: 0,
       status: "public",
       categoryId: null,
       prerequisites: [],
@@ -136,12 +136,12 @@ export function ProductForm({
           />
           <FormField
             control={form.control}
-            name="priceInDollars"
+            name="priceInNaira"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
                   <RequiredLabelIcon />
-                  Price
+                  Price (₦)
                 </FormLabel>
                 <FormControl>
                   <Input

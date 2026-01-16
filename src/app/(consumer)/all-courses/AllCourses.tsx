@@ -10,7 +10,7 @@ export type Product = {
   name: string;
   description: string;
   imageUrl: string;
-  priceInDollars: number;
+  priceInNaira: number;
   status: string;
   category?: {
     id: string;

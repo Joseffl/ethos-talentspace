@@ -13,7 +13,7 @@ export const ProductTable = pgTable("products", {
     name: text().notNull(),
     description: text().notNull(),
     imageUrl: text().notNull(),
-    priceInDollars: integer().notNull(),
+    priceInNaira: integer().notNull(),
     status: productStatusEnum().notNull().default("private"),
     categoryId: uuid("category_id").references(() => CategoryTable.id),
     prerequisites: jsonb("prerequisites").$type<string[]>().default([]), 

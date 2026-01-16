@@ -10,7 +10,7 @@ type Product = {
   id: string
   name: string
   description: string
-  priceInDollars: number
+  priceInNaira: number
   imageUrl: string
   category?: {
     id: string

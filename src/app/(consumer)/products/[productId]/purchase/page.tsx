@@ -85,7 +85,7 @@ async function getPublicProduct(id: string) {
       id: true,
       imageUrl: true,
       description: true,
-      priceInDollars: true,
+      priceInNaira: true,
     },
     where: and(eq(ProductTable.id, id), wherePublicProducts),
   })

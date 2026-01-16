@@ -145,7 +145,7 @@ function getProduct(id: string) {
   return db.query.ProductTable.findFirst({
     columns: {
       id: true,
-      priceInDollars: true,
+      priceInNaira: true,
       name: true,
       description: true,
       imageUrl: true,
