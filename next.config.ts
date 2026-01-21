@@ -24,15 +24,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'i.ibb.co',
-      },
-      {
-        protocol: 'https',
         hostname: 'ik.imagekit.io',
       },
       {
         protocol: 'https',
-        hostname: 'www.magsengineeringlimited.com',
+        hostname: 'images.unsplash.com',
       },
     ],
   },

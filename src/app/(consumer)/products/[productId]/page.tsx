@@ -30,7 +30,7 @@ import { userOwnsProduct } from "@/features/products/db/products";
 import { wherePublicProducts } from "@/features/products/permissions/products";
 import { formatPlural, formatPrice } from "@/lib/formatters";
 import { sumArray } from "@/lib/sumArray";
-import { getCurrentUser } from "@/services/clerk";
+import { getCurrentUser } from "@/services/privy";
 import { and, asc, eq } from "drizzle-orm";
 import { VideoIcon, CheckCircle2 } from "lucide-react";
 import { cacheTag } from "next/dist/server/use-cache/cache-tag";
@@ -112,7 +112,7 @@ export default async function ProductPage(props: {
                 <ul className="space-y-3">
                   {product.prerequisites.map((item, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <span className="text-[#28ac30] mt-1 font-bold">•</span>
+                      <span className="text-[#2563EB] mt-1 font-bold">•</span>
                       <span className="text-gray-700">{item}</span>
                     </li>
                   ))}
@@ -133,7 +133,7 @@ export default async function ProductPage(props: {
                 <ul className="space-y-3">
                   {product.learningOutcomes.map((item, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-[#28ac30] mt-0.5 flex-shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-[#2563EB] mt-0.5 flex-shrink-0" />
                       <span className="text-gray-700">{item}</span>
                     </li>
                   ))}

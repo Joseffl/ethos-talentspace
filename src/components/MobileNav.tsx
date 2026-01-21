@@ -3,8 +3,6 @@
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { SignInButton } from "@clerk/nextjs"
 import { NavbarClient } from "@/app/(consumer)/navbar-client"
 
 interface MobileNavProps {
@@ -30,7 +28,7 @@ export function MobileNav({ isSignedIn, showAdminLink }: MobileNavProps) {
 
       <div
         className={`
-          fixed top-14 right-0 h-auto w-full  bg-white shadow-lg z-50 border-t
+          fixed top-14 right-0 h-auto w-full bg-white shadow-lg z-50 border-t
           transform transition-transform duration-300
           ${isOpen ? "translate-x-0" : "translate-x-full"}
         `}
@@ -48,29 +46,64 @@ export function MobileNav({ isSignedIn, showAdminLink }: MobileNavProps) {
                 </Link>
               )}
               <Link
-                href="/courses"
+                href="/dashboard"
                 className="px-4 py-3 hover:bg-gray-100 rounded-md text-gray-700"
                 onClick={closeMenu}
               >
-                My Courses
+                Dashboard
               </Link>
               <Link
-                href="/purchases"
+                href="/explore"
                 className="px-4 py-3 hover:bg-gray-100 rounded-md text-gray-700"
                 onClick={closeMenu}
               >
-                Purchase History
+                Explore
               </Link>
-              <div className="px-4 py-3">
+              <Link
+                href="/jobs"
+                className="px-4 py-3 hover:bg-gray-100 rounded-md text-gray-700"
+                onClick={closeMenu}
+              >
+                Jobs
+              </Link>
+              <Link
+                href="/messages"
+                className="px-4 py-3 hover:bg-gray-100 rounded-md text-gray-700"
+                onClick={closeMenu}
+              >
+                Messages
+              </Link>
+              <Link
+                href="/profile"
+                className="px-4 py-3 hover:bg-gray-100 rounded-md text-gray-700"
+                onClick={closeMenu}
+              >
+                Profile
+              </Link>
+              <div className="px-4 py-3 border-t mt-2 pt-4">
                 <NavbarClient />
               </div>
             </>
           ) : (
-            <div className="px-4 py-3">
-              <Button className="w-full bg-[#28ac30]" asChild>
-                <SignInButton>Sign In</SignInButton>
-              </Button>
-            </div>
+            <>
+              <Link
+                href="/explore"
+                className="px-4 py-3 hover:bg-gray-100 rounded-md text-gray-700"
+                onClick={closeMenu}
+              >
+                Explore Talent
+              </Link>
+              <Link
+                href="/how-it-works"
+                className="px-4 py-3 hover:bg-gray-100 rounded-md text-gray-700"
+                onClick={closeMenu}
+              >
+                How It Works
+              </Link>
+              <div className="px-4 py-3 border-t mt-2 pt-4">
+                <NavbarClient />
+              </div>
+            </>
           )}
         </nav>
       </div>

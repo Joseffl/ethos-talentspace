@@ -43,6 +43,48 @@
       "when": 1768556791523,
       "tag": "0005_brainy_silverclaw",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1768910668447,
+      "tag": "0006_colossal_zarda",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1768932754119,
+      "tag": "0007_naive_human_fly",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1768998014348,
+      "tag": "0008_sweet_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1769002857145,
+      "tag": "0009_furry_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1769006153592,
+      "tag": "0010_flaky_cyclops",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1769019888385,
+      "tag": "0011_condemned_aqueduct",
+      "breakpoints": true
     }
   ]
 }

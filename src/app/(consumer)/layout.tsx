@@ -1,7 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { canAccessAdminPages } from "@/permissions/general";
-import { getCurrentUser } from "@/services/clerk";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { getCurrentUser } from "@/services/privy";
 import Link from "next/link";
 import { ReactNode, Suspense } from "react";
 import { NavbarClient } from "./navbar-client";
@@ -24,41 +22,21 @@ export default function ConsumerLayout({
 
 function Navbar() {
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md shadow">
-      <nav className="flex items-center justify-between container mx-auto px-4 h-14">
+    <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <nav className="flex items-center justify-between container mx-auto px-4 h-16">
         <Link
-          className="text-lg text-[#28ac30] font-bold hover:underline flex items-center"
+          className="text-xl text-[#2563EB] font-bold hover:opacity-80 transition-opacity flex items-center gap-2"
           href="/"
         >
-          MAGS LMS
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">E</span>
+          </div>
+          Ethos Talentspace
         </Link>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-1">
           <Suspense>
-            <SignedIn>
-              <AdminLink />
-              <Link
-                className="hover:bg-accent/10 flex items-center px-2 py-1 rounded-md"
-                href="/courses"
-              >
-                My Courses
-              </Link>
-              <Link
-                className="hover:bg-accent/10 flex items-center px-2 py-1 rounded-md"
-                href="/purchases"
-              >
-                Purchase History
-              </Link>
-              <NavbarClient />
-            </SignedIn>
-          </Suspense>
-
-          <Suspense>
-            <SignedOut>
-              <Button className="self-center bg-[#28ac30]" asChild>
-                <SignInButton>Sign In</SignInButton>
-              </Button>
-            </SignedOut>
+            <NavContent />
           </Suspense>
         </div>
 
@@ -70,24 +48,69 @@ function Navbar() {
   );
 }
 
+async function NavContent() {
+  const user = await getCurrentUser();
+  const isSignedIn = !!user.userId;
+  const showAdminLink = canAccessAdminPages(user);
+
+  if (!isSignedIn) {
+    return (
+      <>
+        <Link
+          className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors"
+          href="/explore"
+        >
+          Explore
+        </Link>
+        <Link
+          className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors"
+          href="/how-it-works"
+        >
+          How It Works
+        </Link>
+        <NavbarClient />
+      </>
+    );
+  }
+
+  // Signed in navigation
+  return (
+    <>
+      {showAdminLink && (
+        <Link
+          className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors"
+          href="/admin"
+        >
+          Admin
+        </Link>
+      )}
+      <Link
+        className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors"
+        href="/"
+      >
+        Dashboard
+      </Link>
+      <Link
+        className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors"
+        href="/explore"
+      >
+        Explore
+      </Link>
+      <Link
+        className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors"
+        href="/profile"
+      >
+        Profile
+      </Link>
+      <NavbarClient />
+    </>
+  );
+}
+
 async function MobileNavWrapper() {
   const user = await getCurrentUser();
-  const isSignedIn = !!user;
+  const isSignedIn = !!user.userId;
   const showAdminLink = canAccessAdminPages(user);
 
   return <MobileNav isSignedIn={isSignedIn} showAdminLink={showAdminLink} />;
-}
-
-async function AdminLink() {
-  const user = await getCurrentUser();
-  if (!canAccessAdminPages(user)) return null;
-
-  return (
-    <Link
-      className="hover:bg-accent/10 flex items-center px-2 py-1 rounded-md"
-      href="/admin"
-    >
-      Admin
-    </Link>
-  );
 }

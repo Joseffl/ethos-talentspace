@@ -9,7 +9,7 @@ export async function insertUser(data: typeof UserTable.$inferInsert) {
     .values(data)
     .returning()
     .onConflictDoUpdate({
-        target: [UserTable.clerkUserId],
+        target: [UserTable.privyUserId],
         set: data,
     })
 
@@ -20,35 +20,36 @@ export async function insertUser(data: typeof UserTable.$inferInsert) {
 }
 
 export async function updateUser(
-    {clerkUserId}: {clerkUserId: string}, 
+    {privyUserId}: {privyUserId: string},
     data: Partial<typeof UserTable.$inferInsert>) {
     const [updatedUser] = await db
     .update(UserTable)
     .set(data)
-    .where(eq(UserTable.clerkUserId, clerkUserId))
+    .where(eq(UserTable.privyUserId, privyUserId))
     .returning()
-  
 
-    if (updatedUser == null) throw new Error("Failed to create user")
+
+    if (updatedUser == null) throw new Error("Failed to update user")
 
   return updatedUser
 }
 
 
 export async function deleteUser(
-    {clerkUserId}: {clerkUserId: string}) {
+    {privyUserId}: {privyUserId: string}) {
     const [deletedUser] = await db
     .update(UserTable)
     .set({
         deletedAt: new Date(),
         email: "redacted@deleted.com",
         name: "Deleted User",
-        clerkUserId: "deleted",
+        privyUserId: `deleted-${Date.now()}`,
+        walletAddress: null,
         imageUrl: null,
     })
-    .where(eq(UserTable.clerkUserId, clerkUserId))
+    .where(eq(UserTable.privyUserId, privyUserId))
     .returning()
-  
+
 
     if (deletedUser == null) throw new Error("Failed to delete user")
 

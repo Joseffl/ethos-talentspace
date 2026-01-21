@@ -8,7 +8,7 @@ export function LoadingSpinner({
 }: ComponentProps<typeof Loader2Icon>) {
   return (
     <Loader2Icon
-      className={cn("animate-spin text-[#28ac30] h-12 w-12", className)}
+      className={cn("animate-spin text-[#2563EB] h-12 w-12", className)}
       {...props}
     />
   )

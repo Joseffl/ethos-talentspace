@@ -23,7 +23,7 @@ export const PurchaseTable = pgTable("purchases", {
   productId: uuid()
     .notNull()
     .references(() => ProductTable.id, { onDelete: "restrict" }),
-  flutterwaveTransactionId: text().unique(),
+  transactionHash: text().unique(),
   refundedAt: timestamp({ withTimezone: true }),
   createdAt,
   updatedAt,

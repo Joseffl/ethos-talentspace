@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUser } from "@/services/clerk";
+import { getCurrentUser } from "@/services/privy";
 import { canCreateCourses } from "@/features/courses/permissions/courses";
 import { uploadToR2, generateStorageKey } from "@/lib/r2";
 

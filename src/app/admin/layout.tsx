@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
-import { UserButton } from "@clerk/nextjs"
 import Link from "next/link"
 import { ReactNode } from "react"
+import { AdminNavbarClient } from "./navbar-client"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -22,10 +22,10 @@ function Navbar() {
     <header className="shadow bg-background sticky top-0 z-50">
       <nav className="flex items-center justify-between container mx-auto px-4 h-14">
         <div className="flex items-center gap-2">
-          <Link className="text-lg text-[#28ac30] font-bold " href="/admin">
-            MAGS LMS
+          <Link className="text-lg text-[#2563EB] font-bold " href="/admin">
+            Ethos Talentspace
           </Link>
-          <Badge className="bg-[#28ac30]">Admin</Badge>
+          <Badge className="bg-[#2563EB]">Admin</Badge>
         </div>
 
         <div className="flex items-center gap-4">
@@ -59,15 +59,7 @@ function Navbar() {
           >
             Sales
           </Link>
-          <div className="size-8 flex items-center justify-center">
-            <UserButton
-              appearance={{
-                elements: {
-                  userButtonAvatarBox: { width: "100%", height: "100%" },
-                },
-              }}
-            />
-          </div>
+          <AdminNavbarClient />
         </div>
       </nav>
     </header>

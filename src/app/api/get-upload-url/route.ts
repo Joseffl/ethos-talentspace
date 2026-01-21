@@ -1,5 +1,5 @@
 // import { NextRequest, NextResponse } from "next/server";
-// import { getCurrentUser } from "@/services/clerk";
+// import { getCurrentUser } from "@/services/privy";
 // import { canCreateCourses } from "@/features/courses/permissions/courses";
 // import { getPresignedUploadUrl, generateStorageKey } from "@/lib/r2";
 
@@ -28,7 +28,7 @@
 // }
 
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/services/clerk";
+import { getCurrentUser } from "@/services/privy";
 import { canCreateCourses } from "@/features/courses/permissions/courses";
 import { getPresignedUploadUrl, generateStorageKey } from "@/lib/r2";
 

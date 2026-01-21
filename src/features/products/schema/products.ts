@@ -1,6 +1,14 @@
 import { productStatuses } from "@/drizzle/schema"
 import { z } from "zod"
 
+export const reputationCriteriaSchema = z.object({
+  minEthosScore: z.number().int().min(0).max(2500).optional(),
+  minPositiveReviewPercent: z.number().int().min(0).max(100).optional(),
+  minVouchCount: z.number().int().min(0).optional(),
+})
+
+export type ReputationCriteria = z.infer<typeof reputationCriteriaSchema>
+
 export const productSchema = z.object({
   name: z.string().min(1, "Required"),
   priceInNaira: z.number().int().nonnegative(),
@@ -12,6 +20,7 @@ export const productSchema = z.object({
   status: z.enum(productStatuses),
   courseIds: z.array(z.string()).min(1, "At least one course is required"),
   categoryId: z.string().nullable(),
-  prerequisites: z.array(z.string()), 
-  learningOutcomes: z.array(z.string()), 
+  prerequisites: z.array(z.string()),
+  learningOutcomes: z.array(z.string()),
+  reputationCriteria: reputationCriteriaSchema,
 })

@@ -18,7 +18,7 @@ import {
   wherePublicLessons,
 } from "@/features/lessons/permissions/lessons"
 import { canUpdateUserLessonCompleteStatus } from "@/features/lessons/permissions/userLessonComplete"
-import { getCurrentUser } from "@/services/clerk"
+import { getCurrentUser } from "@/services/privy"
 import { and, asc, desc, eq, gt, lt } from "drizzle-orm"
 import { CheckSquare2Icon, LockIcon, XSquareIcon, ChevronLeft } from "lucide-react"
 import { cacheTag } from "next/dist/server/use-cache/cache-tag"

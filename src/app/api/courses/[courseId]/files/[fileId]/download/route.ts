@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/services/clerk";
+import { getCurrentUser } from "@/services/privy";
 import { db } from "@/drizzle/db";
 import { CourseFileTable } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";

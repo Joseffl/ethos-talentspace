@@ -30,10 +30,11 @@ import { wherePublicLessons } from "@/features/lessons/permissions/lessons"
 import { getLessonCourseTag } from "@/features/lessons/db/cache/lessons"
 import { getUserLessonCompleteUserTag } from "@/features/lessons/db/cache/userLessonComplete"
 import { formatPlural } from "@/lib/formatters"
-import { getCurrentUser } from "@/services/clerk"
+import { getCurrentUser } from "@/services/privy"
 import { and, countDistinct, eq } from "drizzle-orm"
 import { cacheTag } from "next/dist/server/use-cache/cache-tag"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { Suspense } from "react"
 
 export default function CoursesPage() {
@@ -56,8 +57,8 @@ export default function CoursesPage() {
 }
 
 async function CourseGrid() {
-  const { userId, redirectToSignIn } = await getCurrentUser()
-  if (userId == null) return redirectToSignIn()
+  const { userId } = await getCurrentUser()
+  if (userId == null) redirect("/sign-in")
 
   const courses = await getUserCourses(userId)
 
@@ -108,7 +109,7 @@ async function CourseGrid() {
         </Button>
       </CardFooter>
       <div
-        className="bg-[#28ac30] h-2 -mt-2"
+        className="bg-[#2563EB] h-2 -mt-2"
         style={{
           width: `${course.lessonsCount > 0 ? (course.lessonsComplete / course.lessonsCount) * 100 : 0}%`,
         }}

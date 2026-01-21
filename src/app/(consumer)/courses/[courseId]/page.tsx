@@ -94,7 +94,7 @@ export default async function CoursePage({
                             "
                           >
                             <div className="flex items-start md:items-center gap-3 flex-1 min-w-0">
-                              <PlayCircle className="w-5 h-5 text-[#28ac30] flex-shrink-0 mt-0.5 md:mt-0" />
+                              <PlayCircle className="w-5 h-5 text-[#2563EB] flex-shrink-0 mt-0.5 md:mt-0" />
 
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-sm md:text-base break-words">

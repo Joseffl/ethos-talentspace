@@ -219,7 +219,7 @@ function SecurePDFViewer({ courseId, fileId }: { courseId: string; fileId: strin
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-[#28ac30]" />
+        <Loader2 className="h-10 w-10 animate-spin text-[#2563EB]" />
         <p className="text-sm text-muted-foreground font-medium">Loading document...</p>
       </div>
     );

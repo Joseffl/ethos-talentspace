@@ -12,7 +12,7 @@ import {
   canDeleteProducts,
   canUpdateProducts,
 } from "../permissions/products";
-import { getCurrentUser } from "@/services/clerk";
+import { getCurrentUser } from "@/services/privy";
 import { productSchema } from "../schema/products";
 
 export async function createProduct(unsafeData: z.infer<typeof productSchema>) {

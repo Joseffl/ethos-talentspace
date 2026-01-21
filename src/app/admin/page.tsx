@@ -51,7 +51,7 @@ export default async function AdminPage() {
 
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-[#28ac30]" />
+            <TrendingUp className="w-5 h-5 text-[#2563EB]" />
             Revenue 
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -63,7 +63,7 @@ export default async function AdminPage() {
 
         <div>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-[#28ac30]" />
+            <GraduationCap className="w-5 h-5 text-[#2563EB]" />
             Platform Metrics
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -200,8 +200,8 @@ function AnimatedStatCard({
   accentColor = "primary",
 }: AnimatedStatCardProps) {
   const colorClasses = {
-    primary: "from-[#28ac30] to-[#1f8622] shadow-green-500/20",
-    secondary: "from-[#28ac30]/70 to-[#1f8622]/70 shadow-green-500/10",
+    primary: "from-[#2563EB] to-[#1f8622] shadow-green-500/20",
+    secondary: "from-[#2563EB]/70 to-[#1f8622]/70 shadow-green-500/10",
   };
 
   return (
@@ -233,7 +233,7 @@ function AnimatedStatCard({
             <div
               className={`flex items-center gap-1 text-xs font-medium ${
                 trend === "up"
-                  ? "text-[#28ac30] dark:text-[#28ac30]"
+                  ? "text-[#2563EB] dark:text-[#2563EB]"
                   : "text-red-600 dark:text-red-400"
               }`}
             >

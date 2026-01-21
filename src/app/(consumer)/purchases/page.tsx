@@ -7,10 +7,11 @@ import {
   UserPurchaseTableSkeleton,
 } from "@/features/purchases/components/UserPurchaseTable"
 import { getPurchaseUserTag } from "@/features/purchases/db/cache"
-import { getCurrentUser } from "@/services/clerk"
+import { getCurrentUser } from "@/services/privy"
 import { desc, eq } from "drizzle-orm"
 import { cacheTag } from "next/dist/server/use-cache/cache-tag"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { Suspense } from "react"
 
 export default function PurchasesPage() {
@@ -25,8 +26,8 @@ export default function PurchasesPage() {
 }
 
 async function SuspenseBoundary() {
-  const { userId, redirectToSignIn } = await getCurrentUser()
-  if (userId == null) return redirectToSignIn()
+  const { userId } = await getCurrentUser()
+  if (userId == null) redirect("/sign-in")
 
   const purchases = await getPurchases(userId)
 

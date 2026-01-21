@@ -46,6 +46,11 @@ export function ProductForm({
     categoryId?: string | null
     prerequisites?: string[]
     learningOutcomes?: string[]
+    reputationCriteria?: {
+      minEthosScore?: number
+      minPositiveReviewPercent?: number
+      minVouchCount?: number
+    }
   }
   courses: {
     id: string
@@ -71,6 +76,7 @@ export function ProductForm({
       categoryId: null,
       prerequisites: [],
       learningOutcomes: [],
+      reputationCriteria: {},
     },
   })
 
@@ -99,17 +105,17 @@ export function ProductForm({
     form.setValue("learningOutcomes", learningOutcomes.filter((_, i) => i !== index))
   }
 
- const onSubmit = async (values: z.infer<typeof productSchema>) => {
-  const action =
-    product == null ? createProduct : updateProduct.bind(null, product.id)
-  const data = await action(values)
-  if (data?.error) {
-    toast.error(data.message || "Something went wrong!")
-  } else {
-    toast.success(data.message || "Course created successfully!")
-    form.reset()
+  const onSubmit = async (values: z.infer<typeof productSchema>) => {
+    const action =
+      product == null ? createProduct : updateProduct.bind(null, product.id)
+    const data = await action(values)
+    if (data?.error) {
+      toast.error(data.message || "Something went wrong!")
+    } else {
+      toast.success(data.message || "Course created successfully!")
+      form.reset()
+    }
   }
-}
 
   return (
     <Form {...form}>
@@ -141,7 +147,7 @@ export function ProductForm({
               <FormItem>
                 <FormLabel>
                   <RequiredLabelIcon />
-                  Price (₦)
+                  Price ($)
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -379,6 +385,90 @@ export function ProductForm({
             </FormItem>
           )}
         />
+
+        {/* Ethos Reputation Requirements Section */}
+        <div className="border border-gray-200 rounded-lg p-4 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="bg-blue-100 p-1.5 rounded-full">
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+            </div>
+            <h3 className="text-sm font-semibold text-gray-700">Ethos Reputation Requirements</h3>
+            <span className="text-xs text-gray-400">(Optional)</span>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">
+            Set minimum reputation criteria for buyers. Leave empty for no requirements.
+          </p>
+
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+            <FormField
+              control={form.control}
+              name="reputationCriteria.minEthosScore"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Min Ethos Score</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 1300"
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-gray-400">Score levels: 900 (Building), 1200 (Established), 1500 (Trusted)</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="reputationCriteria.minPositiveReviewPercent"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Min Positive Reviews %</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 80"
+                      min={0}
+                      max={100}
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-gray-400">Percentage of positive reviews</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="reputationCriteria.minVouchCount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">Min Vouch Count</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 3"
+                      min={0}
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-gray-400">Number of vouches received</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         <div className="self-end">
           <Button disabled={form.formState.isSubmitting} type="submit">

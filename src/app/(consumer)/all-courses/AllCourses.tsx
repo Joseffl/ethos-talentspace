@@ -62,7 +62,7 @@ export default function AllCourses({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg 
-              focus:outline-none focus:ring-2 focus:ring-[#28ac30] focus:border-transparent shadow-sm"
+              focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent shadow-sm"
           />
         </div>
       </section>

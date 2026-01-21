@@ -2,7 +2,8 @@ import { relations } from "drizzle-orm";
 import { pgTable, text, integer, pgEnum, uuid, jsonb } from "drizzle-orm/pg-core";
 import { createdAt, id, updatedAt } from "../schemaHelpers";
 import { CourseProductTable } from "./courseProduct";
-import { CategoryTable } from "./category"; 
+import { CategoryTable } from "./category";
+import { UserTable } from "./user";
 
 export const productStatuses = ["public", "private"] as const
 export type ProductStatus = (typeof productStatuses)[number]
@@ -16,16 +17,26 @@ export const ProductTable = pgTable("products", {
     priceInNaira: integer().notNull(),
     status: productStatusEnum().notNull().default("private"),
     categoryId: uuid("category_id").references(() => CategoryTable.id),
-    prerequisites: jsonb("prerequisites").$type<string[]>().default([]), 
-    learningOutcomes: jsonb("learning_outcomes").$type<string[]>().default([]), 
+    ownerId: uuid("owner_id").references(() => UserTable.id),
+    prerequisites: jsonb("prerequisites").$type<string[]>().default([]),
+    learningOutcomes: jsonb("learning_outcomes").$type<string[]>().default([]),
+    reputationCriteria: jsonb("reputation_criteria").$type<{
+        minEthosScore?: number;
+        minPositiveReviewPercent?: number;
+        minVouchCount?: number;
+    }>().default({}),
     createdAt,
     updatedAt
 })
 
-export const ProductRelationships = relations(ProductTable, ({one, many}) => ({
+export const ProductRelationships = relations(ProductTable, ({ one, many }) => ({
     courseProducts: many(CourseProductTable),
-    category: one(CategoryTable, { 
+    category: one(CategoryTable, {
         fields: [ProductTable.categoryId],
         references: [CategoryTable.id],
-    })
+    }),
+    owner: one(UserTable, {
+        fields: [ProductTable.ownerId],
+        references: [UserTable.id],
+    }),
 }))

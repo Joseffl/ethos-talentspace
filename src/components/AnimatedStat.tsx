@@ -64,7 +64,7 @@ export function AnimatedStat({ value, suffix, label }: AnimatedStatProps) {
 
   return (
     <div ref={ref} className="text-center">
-      <p className="text-4xl font-bold text-[#28ac30] mb-2">
+      <p className="text-4xl font-bold text-[#2563EB] mb-2">
         {formatNumber(count)}
         {isVisible && suffix}
       </p>

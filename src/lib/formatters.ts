@@ -11,7 +11,7 @@ export function formatPlural(
 export function formatPrice(amount: number, { showZeroAsNumber = false } = {}) {
   const formatter = new Intl.NumberFormat("en-NG", {
     style: "currency",
-    currency: "NGN",
+    currency: "USD",
     minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
   })
 

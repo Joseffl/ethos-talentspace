@@ -24,7 +24,7 @@ export function CategoryFilter({ categories, activeSlug }: CategoryFilterProps) 
           href={pathname}
           className={`px-6 py-2 rounded-full font-medium whitespace-nowrap transition-all ${
             !activeSlug
-              ? "bg-[#28ac30] text-white"
+              ? "bg-[#2563EB] text-white"
               : "bg-white text-gray-700 hover:bg-gray-100"
           }`}
         >
@@ -37,7 +37,7 @@ export function CategoryFilter({ categories, activeSlug }: CategoryFilterProps) 
             href={`${pathname}?category=${category.slug}`}
             className={`px-6 py-2 rounded-full font-medium whitespace-nowrap transition-all ${
               activeSlug === category.slug
-                ? "bg-[#28ac30] text-white"
+                ? "bg-[#2563EB] text-white"
                 : "bg-white text-gray-700 hover:bg-gray-100"
             }`}
           >

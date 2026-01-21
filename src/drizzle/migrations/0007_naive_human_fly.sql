@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "reputation_criteria" jsonb DEFAULT '{}'::jsonb;

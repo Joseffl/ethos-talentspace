@@ -1,9 +1,7 @@
 "use server"
 
-import axios from "axios"
-import { env } from "@/data/env/server"
 import { canRefundPurchases } from "../permissions/products"
-import { getCurrentUser } from "@/services/clerk"
+import { getCurrentUser } from "@/services/privy"
 import { db } from "@/drizzle/db"
 import { updatePurchase } from "../db/purchases"
 import { revokeUserCourseAccess } from "@/features/courses/db/userCourseAcccess"
@@ -24,33 +22,6 @@ export async function refundPurchase(id: string) {
     )
 
     try {
-      const verifyResponse = await axios.get(
-        `https://api.flutterwave.com/v3/transactions/${refundedPurchase.flutterwaveTransactionId}/verify`,
-        {
-          headers: {
-            Authorization: `Bearer ${env.FLUTTERWAVE_SECRET_KEY}`,
-          },
-        }
-      )
-
-      if (verifyResponse.data.status !== "success") {
-        trx.rollback()
-        return {
-          error: true,
-          message: "There was an error refunding this purchase",
-        }
-      }
-
-      await axios.post(
-        `https://api.flutterwave.com/v3/transactions/${refundedPurchase.flutterwaveTransactionId}/refund`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${env.FLUTTERWAVE_SECRET_KEY}`,
-          },
-        }
-      )
-
       await revokeUserCourseAccess(refundedPurchase, trx)
     } catch (error) {
       console.error("Refund error:", error)

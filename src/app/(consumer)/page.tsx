@@ -1,701 +1,545 @@
+import { Suspense } from "react";
+import Link from "next/link";
 import { db } from "@/drizzle/db";
-import {
-  ProductTable,
-  CategoryTable,
-  CourseTable,
-  CourseSectionTable,
-  LessonTable,
-  UserCourseAccessTable,
-  UserLessonCompleteTable,
-} from "@/drizzle/schema";
+import { ProductTable, GigTable } from "@/drizzle/schema";
+import { getCurrentUser } from "@/services/privy";
+import { eq, desc, and, ne } from "drizzle-orm";
+import { cacheTag } from "next/dist/server/use-cache/cache-tag";
 import { getProductGlobalTag } from "@/features/products/db/cache";
 import { wherePublicProducts } from "@/features/products/permissions/products";
-import { getUserCourseAccessUserTag } from "@/features/courses/db/cache/userCourseAccess";
-import { getUserLessonCompleteUserTag } from "@/features/lessons/db/cache/userLessonComplete";
-import { getCourseIdTag } from "@/features/courses/db/cache/courses";
-import { getCourseSectionCourseTag } from "@/features/courseSections/db/cache";
-import { getLessonCourseTag } from "@/features/lessons/db/cache/lessons";
-import { wherePublicCourseSections } from "@/features/courseSections/permissions/sections";
-import { wherePublicLessons } from "@/features/lessons/permissions/lessons";
-import { asc, eq, and, countDistinct, sql } from "drizzle-orm";
-import { cacheTag } from "next/dist/server/use-cache/cache-tag";
-import {
-  BookOpen,
-  Clock,
-  Award,
-  TrendingUp,
-  ChevronRight,
-  Users,
-  Star,
-  PlayCircle,
-} from "lucide-react";
-import Link from "next/link";
-import { ProductCard } from "@/features/products/components/ProductCard";
-import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
+
+// UI Components
 import { Button } from "@/components/ui/button";
+import { ServiceCard } from "@/components/ServiceCard";
+import { GigCard } from "@/components/GigCard";
 import { AnimatedStat } from "@/components/AnimatedStat";
-import { getCurrentUser } from "@/services/clerk";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { formatPlural } from "@/lib/formatters";
-import { Suspense } from "react";
+  ChevronRight, Users, Award,
+  PlayCircle, TrendingUp,
+  Plus, Briefcase, Wallet, LayoutGrid, Search, FileText, Settings, Send
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
-interface PageProps {
-  searchParams: Promise<{
-    category?: string;
-  }>;
-}
+export default async function HomePage() {
+  const { userId, user, walletAddress } = await getCurrentUser({ allData: true });
+  const isAuthenticated = !!userId;
 
-export default async function HomePage({ searchParams }: PageProps) {
-  const { category: categorySlug } = await searchParams;
-  const [featuredProducts, categories] = await Promise.all([
-    getFeaturedProducts(),
-    getCategories(),
+  // --- AUTHENTICATED VIEW (DASHBOARD) ---
+  if (isAuthenticated) {
+    return (
+      <div className="container py-8 space-y-8">
+        <Suspense fallback={<DashboardSkeleton />}>
+          <UnifiedDashboard userId={userId} userName={user?.name} walletAddress={walletAddress} />
+        </Suspense>
+      </div>
+    );
+  }
+
+  // --- UNAUTHENTICATED VIEW (LANDING PAGE) ---
+  const [featuredServices, featuredGigs] = await Promise.all([
+    getFeaturedServices(),
+    getFeaturedGigs(),
   ]);
 
   return (
-    <>
-      <SignedIn>
-        <Suspense
-          fallback={
-            <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-2xl mb-16" />
-          }
-        >
-          <HeroAuthenticated />
-        </Suspense>
-      </SignedIn>
-      <SignedOut>
-        <HeroUnauthenticated />
-      </SignedOut>
+    <div className="container py-8">
+      <HeroUnauthenticated />
 
-      <SignedIn>
-        <Suspense fallback={<StatsAndCoursesSkeleton />}>
-          <AuthenticatedContent />
-        </Suspense>
-      </SignedIn>
-      <SignedOut>
-        <UnauthenticatedContent />
-      </SignedOut>
-
-      <section id="featured" className="mb-16">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-2xl font-bold text-gray-900">Featured Courses</h3>
+      {/* Stats Section */}
+      <section className="mb-16">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <AnimatedStat value={1200} suffix="+" label="Verified Talent" />
+          <AnimatedStat value={5000} suffix="+" label="Gigs Completed" />
+          <AnimatedStat value={98} suffix="%" label="Success Rate" />
+          <AnimatedStat value={20} suffix="M+" label="Value Transacted" />
         </div>
-
-        {featuredProducts.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-xl">
-            <BookOpen className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600">No courses available yet.</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 mb-8">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} {...product} />
-              ))}
-            </div>
-
-            <div className="text-center">
-              <Link
-                href="/all-courses"
-                className="inline-flex items-center gap-2 px-8 py-3 bg-[#28ac30] text-white rounded-lg font-semibold hover:bg-[#229a28] transition-colors"
-              >
-                Browse All Courses <ChevronRight className="w-5 h-5" />
-              </Link>
-            </div>
-          </>
-        )}
       </section>
 
-      {categories.length > 0 && (
+      {/* Open Gigs Section */}
+      {featuredGigs.length > 0 && (
         <section className="mb-16">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8">
-            Explore by Category
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {categories.slice(0, 8).map((category) => (
-              <Link
-                key={category.id}
-                href={`/all-courses?category=${category.slug}`}
-                className="bg-white rounded-lg p-4 md:p-6 text-center shadow-sm hover:shadow-md transition-all hover:scale-105 border border-gray-100"
-              >
-                <div className="bg-green-100 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                  <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-[#28ac30]" />
-                </div>
-                <h4 className="font-semibold text-gray-900 text-sm md:text-base break-words">
-                  {category.name}
-                </h4>
-              </Link>
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-2xl font-bold text-gray-900">Open Gigs</h3>
+            <Link href="/explore/gigs" className="text-green-600 hover:underline flex items-center gap-1">
+              View all <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredGigs.map((gig) => (
+              <GigCard key={gig.id} {...gig} />
             ))}
           </div>
-          {categories.length > 8 && (
-            <div className="text-center mt-8">
-              <Link
-                href="/all-courses"
-                className="text-[#28ac30] font-semibold hover:text-[#229a28] inline-flex items-center gap-1"
-              >
-                View All Categories <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-          )}
         </section>
       )}
 
-      <SignedIn>
-        <CTAAuthenticated />
-      </SignedIn>
-      <SignedOut>
-        <CTAUnauthenticated />
-      </SignedOut>
-    </>
-  );
-}
-
-function HeroAuthenticated() {
-  return (
-    <section className="mb-16 bg-gradient-to-r from-[#28ac30] to-[#1f8a26] rounded-2xl overflow-hidden shadow-xl">
-      <div className="grid md:grid-cols-2 gap-8 items-center p-8 md:p-12">
-        <div className="text-white">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Welcome back, Engineer!
-          </h1>
-          <p className="text-xl mb-6 text-green-100">
-            Continue your learning journey with world-class engineering courses
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/courses"
-              className="px-6 py-3 bg-white text-[#1f8a26] rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-block"
-            >
-              My Courses
-            </Link>
-            <Link
-              href="/all-courses"
-              className="px-6 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-[#1f8a26] transition-colors inline-block"
-            >
-              Explore More
-            </Link>
-          </div>
-        </div>
-        <div className="hidden md:block">
-          <img
-            src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=400&fit=crop"
-            alt="Engineering Learning"
-            className="rounded-xl shadow-2xl"
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function HeroUnauthenticated() {
-  return (
-    <section className="mb-16 bg-gradient-to-r from-[#28ac30] to-[#1f8a26] rounded-2xl overflow-hidden shadow-xl">
-      <div className="grid md:grid-cols-2 gap-8 items-center p-8 md:p-12">
-        <div className="text-white">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Master Engineering Skills Online
-          </h1>
-          <p className="text-xl mb-6 text-green-100">
-            Learn from industry experts and advance your career with
-            cutting-edge engineering courses
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <Button
-              className="px-6 py-3 bg-white text-[#1f8a26] rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-              asChild
-            >
-              <SignUpButton mode="modal" forceRedirectUrl="/">
-                <Button className="px-6 py-3 bg-white text-[#1f8a26] ...">
-                  Get Started
-                </Button>
-              </SignUpButton>
-            </Button>
-            <Button
-              variant="outline"
-              className="px-6 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-[#1f8a26] transition-colors bg-transparent"
-              asChild
-            >
-              <SignInButton mode="modal">Sign In</SignInButton>
-            </Button>
-          </div>
-        </div>
-        <div className="hidden md:block">
-          <img
-            src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=400&fit=crop"
-            alt="Engineering Learning"
-            className="rounded-xl shadow-2xl"
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-async function AuthenticatedContent() {
-  const { userId } = await getCurrentUser();
-
-  const [userStats, userCourses] = await Promise.all([
-    userId ? getUserStats(userId) : null,
-    userId ? getUserCoursesForHomepage(userId) : [],
-  ]);
-
-  const stats = [
-    {
-      label: "Courses Enrolled",
-      value: userStats?.coursesEnrolled.toString() || "0",
-      icon: BookOpen,
-      color: "bg-blue-500",
-    },
-    {
-      label: "Hours Learned",
-      value: userStats?.hoursLearned.toString() || "0",
-      icon: Clock,
-      color: "bg-purple-500",
-    },
-    {
-      label: "Certificates",
-      value: userStats?.certificates.toString() || "0",
-      icon: Award,
-      color: "bg-green-500",
-    },
-    {
-      label: "Avg Progress",
-      value: `${userStats?.avgProgress || 0}%`,
-      icon: TrendingUp,
-      color: "bg-orange-500",
-    },
-  ];
-
-  return (
-    <>
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className={`${stat.color} p-3 rounded-lg`}>
-                <stat.icon className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-gray-900 mb-1">
-              {stat.value}
-            </p>
-            <p className="text-sm text-gray-600">{stat.label}</p>
-          </div>
-        ))}
-      </section>
-
+      {/* Services Section */}
       <section className="mb-16">
         <div className="flex items-center justify-between mb-8">
-          <h3 className="text-2xl font-bold text-gray-900">
-            Continue Learning
-          </h3>
-          <Link
-            href="/courses"
-            className="text-[#28ac30] font-semibold hover:text-[#229a28] flex items-center gap-1"
-          >
+          <h3 className="text-2xl font-bold text-gray-900">Featured Services</h3>
+          <Link href="/explore" className="text-blue-600 hover:underline flex items-center gap-1">
             View all <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {featuredServices.map((service) => (
+            <ServiceCard key={service.id} {...service} />
+          ))}
+        </div>
+      </section>
 
-        {userCourses.length === 0 ? (
-          <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl p-8 text-center border border-gray-200">
-            <BookOpen className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h4 className="text-xl font-semibold text-gray-700 mb-2">
-              No courses enrolled yet
-            </h4>
-            <p className="text-gray-600 mb-4">
-              Start your learning journey by exploring our featured courses
-              below
-            </p>
+      <UnauthenticatedContent />
+      <CTAUnauthenticated />
+    </div>
+  );
+}
+
+// --- UNIFIED DASHBOARD ---
+
+// ... imports
+import { DealCard } from "@/components/DealCard";
+
+// ... UnifiedDashboard signature ...
+
+async function UnifiedDashboard({
+  userId,
+  userName,
+  walletAddress
+}: {
+  userId: string;
+  userName?: string | null;
+  walletAddress?: string | null;
+}) {
+  const [myServices, myGigs, browseServices, browseGigs, dealsResults] = await Promise.all([
+    getMyServices(userId),
+    getMyGigs(userId),
+    getBrowseServices(userId),
+    getBrowseGigs(userId),
+    getMyDeals(userId),
+  ]);
+
+  // Calculate stats from the fetched deals
+  const stats = await getDashboardStats(userId);
+  // Optimization: getDashboardStats currently re-fetches deals. 
+  // Ideally, we should unify this, but for now let's just use the `dealsResults` for display
+  // and `stats` for the counters (or update stats locally).
+  // Actually, let's keep `getDashboardStats` for the other counters and overwrite activeDeals
+  stats.activeDeals = dealsResults.asTalent.length + dealsResults.asClient.length;
+
+
+  return (
+    <div className="space-y-8">
+      {/* Welcome & Stats */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          title="My Services"
+          value={stats.myServicesCount}
+          icon={LayoutGrid}
+          color="blue"
+          subtitle="Active services"
+        />
+        <StatsCard
+          title="My Gigs"
+          value={stats.myGigsCount}
+          icon={Briefcase}
+          color="purple"
+          subtitle="Posted jobs"
+        />
+        <StatsCard
+          title="Active Deals"
+          value={stats.activeDeals}
+          icon={FileText}
+          color="green"
+          subtitle="In progress"
+        />
+        <StatsCard
+          title="Earnings"
+          value="$0" // content placeholder
+          icon={Wallet}
+          color="yellow"
+          subtitle="Total earned"
+          isString
+        />
+      </div>
+
+      <Tabs defaultValue="services" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="services">My Services</TabsTrigger>
+          <TabsTrigger value="gigs">My Gigs</TabsTrigger>
+          <TabsTrigger value="deals">Active Deals</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="services" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">My Services</h2>
+            <Button asChild>
+              <Link href="/services/new">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Service
+              </Link>
+            </Button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userCourses.slice(0, 3).map((course) => (
-              <Card key={course.id} className="overflow-hidden flex flex-col">
-                <CardHeader>
-                  <CardTitle>{course.name}</CardTitle>
-                  <CardDescription>
-                    {formatPlural(course.sectionsCount, {
-                      plural: "sections",
-                      singular: "section",
-                    })}{" "}
-                    •{" "}
-                    {formatPlural(course.lessonsCount, {
-                      plural: "lessons",
-                      singular: "lesson",
-                    })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent
-                  className="line-clamp-3 mb-4"
-                  title={course.description}
-                >
-                  {course.description}
-                </CardContent>
-                <div className="flex-grow" />
-                <CardFooter>
-                  <Button asChild>
-                    <Link href={`/courses/${course.id}`}>
-                      Continue Learning
+          {myServices.length === 0 ? (
+            <EmptyState
+              icon={LayoutGrid}
+              title="No services"
+              description="You haven't created any services yet."
+              action={
+                <Button asChild>
+                  <Link href="/services/new">Create Service</Link>
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {myServices.map((service) => (
+                <ServiceCard key={service.id} {...service} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="gigs" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">My Gigs</h2>
+            <Button asChild>
+              <Link href="/gigs/new">
+                <Plus className="w-4 h-4 mr-2" />
+                Post a Gig
+              </Link>
+            </Button>
+          </div>
+          {myGigs.length === 0 ? (
+            <EmptyState
+              icon={Briefcase}
+              title="No gigs"
+              description="You haven't posted any gigs yet."
+              action={
+                <Button asChild>
+                  <Link href="/gigs/new">Post a Gig</Link>
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {myGigs.map((gig) => (
+                <GigCard key={gig.id} {...gig} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* My Deals Tab */}
+        <TabsContent value="deals" className="space-y-6">
+          {stats.activeDeals === 0 ? (
+            <EmptyState
+              icon={FileText}
+              title="No active deals"
+              description="When you hire someone or get hired, your deals will appear here."
+              action={
+                <div className="flex gap-3">
+                  <Button asChild variant="outline">
+                    <Link href="/explore">
+                      <Search className="w-4 h-4 mr-2" />
+                      Browse Services
                     </Link>
                   </Button>
-                </CardFooter>
-                <div
-                  className="bg-[#28ac30] h-2 -mt-2"
-                  style={{
-                    width: `${
-                      course.lessonsCount > 0
-                        ? (course.lessonsComplete / course.lessonsCount) * 100
-                        : 0
-                    }%`,
-                  }}
-                />
-              </Card>
-            ))}
+                  <Button asChild variant="outline" className="border-green-600 text-green-600">
+                    <Link href="/explore/gigs">
+                      <Briefcase className="w-4 h-4 mr-2" />
+                      Browse Gigs
+                    </Link>
+                  </Button>
+                </div>
+              }
+            />
+          ) : (
+            <div className="grid gap-6">
+              {/* Deals as Talent */}
+              {dealsResults.asTalent.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Jobs I&apos;m Working On</h3>
+                  {dealsResults.asTalent.map(deal => (
+                    <DealCard key={deal.id} role="talent" deal={deal} />
+                  ))}
+                </div>
+              )}
+
+              {/* Deals as Client */}
+              {dealsResults.asClient.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Talent Hired</h3>
+                  {dealsResults.asClient.map(deal => (
+                    <DealCard key={deal.id} role="client" deal={deal} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// --- HELPER COMPONENTS ---
+
+function StatsCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subtitle,
+  isString = false
+}: {
+  title: string;
+  value: number | string;
+  icon: React.ElementType;
+  color: "blue" | "yellow" | "green" | "purple" | "teal";
+  subtitle: string;
+  isString?: boolean;
+}) {
+  const colorClasses = {
+    blue: "bg-blue-50 text-blue-600 border-blue-200",
+    yellow: "bg-amber-50 text-amber-600 border-amber-200",
+    green: "bg-green-50 text-green-600 border-green-200",
+    purple: "bg-purple-50 text-purple-600 border-purple-200",
+    teal: "bg-teal-50 text-teal-600 border-teal-200",
+  };
+
+  return (
+    <Card className={`border-2 ${colorClasses[color]} hover:shadow-md transition-shadow`}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-600">{title}</span>
+          <Icon className="w-5 h-5" />
+        </div>
+        <div className="text-2xl font-bold">{isString ? value : value}</div>
+        <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  action
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="text-center py-16 px-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+      <div className="bg-white p-4 rounded-full w-fit mx-auto mb-4 shadow-sm">
+        <Icon className="w-10 h-10 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-500 max-w-md mx-auto mb-6">{description}</p>
+      {action}
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="animate-pulse space-y-8">
+      <div className="flex justify-between items-center">
+        <div className="h-10 w-64 bg-gray-200 rounded" />
+        <div className="flex gap-3">
+          <div className="h-12 w-32 bg-gray-200 rounded-lg" />
+          <div className="h-12 w-40 bg-gray-200 rounded-lg" />
+        </div>
+      </div>
+      <div className="grid grid-cols-5 gap-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-28 bg-gray-200 rounded-xl" />
+        ))}
+      </div>
+      <div className="h-12 w-96 bg-gray-200 rounded-xl" />
+      <div className="grid grid-cols-3 gap-6">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-72 bg-gray-100 rounded-2xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- LANDING PAGE COMPONENTS ---
+
+function HeroUnauthenticated() {
+  return (
+    <section className="mb-16 bg-gradient-to-br from-[#2563EB] to-[#1E40AF] rounded-3xl overflow-hidden shadow-2xl">
+      <div className="grid md:grid-cols-2 gap-12 items-center p-10 md:p-16">
+        <div className="text-white">
+          <h1 className="text-5xl font-extrabold mb-6 leading-tight">
+            The Reputation Layer for Web3 Talent
+          </h1>
+          <p className="text-xl mb-8 text-blue-100">
+            Ethos Talentspace connects world-class KOLs, developers, and designers with
+            verified on-chain track records.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/sign-up" className="px-8 py-4 bg-white text-[#1E40AF] rounded-xl font-bold hover:bg-gray-100 transition-all">
+              Get Started
+            </Link>
+            <Link href="/explore" className="px-8 py-4 border-2 border-white text-white rounded-xl font-bold hover:bg-white/10 transition-all">
+              Browse Talent
+            </Link>
           </div>
-        )}
-      </section>
-    </>
+        </div>
+        <div className="relative hidden md:block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&q=80"
+            alt="Web3 Talentspace"
+            className="rounded-2xl shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500"
+          />
+        </div>
+      </div>
+    </section>
   );
 }
 
 function UnauthenticatedContent() {
   const features = [
-    {
-      icon: Users,
-      title: "Expert Instructors",
-      description:
-        "Learn from industry professionals with real-world experience",
-    },
-    {
-      icon: Award,
-      title: "Certified Learning",
-      description: "Earn certificates recognized by top engineering firms",
-    },
-    {
-      icon: PlayCircle,
-      title: "On-Demand Access",
-      description: "Study at your own pace with lifetime course access",
-    },
-    {
-      icon: TrendingUp,
-      title: "Career Growth",
-      description: "Advance your engineering career with in-demand skills",
-    },
-  ];
-
-  const stats = [
-    { value: 10000, suffix: "+", label: "Active Students" },
-    { value: 500, suffix: "+", label: "Expert Courses" },
-    { value: 95, suffix: "%", label: "Satisfaction Rate" },
-    { value: 50, suffix: "+", label: "Industry Partners" },
+    { icon: Users, title: "Verified Identity", description: "Every profile is linked to on-chain credentials and social proof." },
+    { icon: Award, title: "Smart Escrow", description: "Payments are held in secure smart contracts until milestones are met." },
+    { icon: TrendingUp, title: "Reputation Staking", description: "Talent stakes their reputation to ensure high-quality delivery." },
+    { icon: PlayCircle, title: "Instant Settlement", description: "Get paid instantly in crypto once the client approves the work." },
   ];
 
   return (
-    <>
-      <section className="mb-16">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {stats.map((stat, index) => (
-            <AnimatedStat key={index} {...stat} />
-          ))}
-        </div>
-      </section>
-
-      <section className="mb-25">
-        <h3 className="text-2xl font-bold text-gray-900 text-center mb-10">
-          Why Engineers Choose Us
-        </h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow text-center border border-gray-100"
-            >
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <feature.icon className="w-8 h-8 text-[#28ac30]" />
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-2">
-                {feature.title}
-              </h4>
-              <p className="text-gray-600 text-sm">{feature.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mb-16 bg-gradient-to-br from-gray-50 to-white rounded-2xl p-8 md:p-12 border border-gray-100">
-        <h3 className="text-2xl font-bold text-gray-900 text-center mb-10">
-          Start Learning in 3 Simple Steps
-        </h3>
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            {
-              step: "1",
-              title: "Create Your Account",
-              description: "Sign up free and browse our course catalog",
-            },
-            {
-              step: "2",
-              title: "Choose Your Course",
-              description:
-                "Select from hundreds of expert-led engineering courses",
-            },
-            {
-              step: "3",
-              title: "Start Learning",
-              description:
-                "Study at your pace and earn recognized certificates",
-            },
-          ].map((item, index) => (
-            <div key={index} className="text-center">
-              <div className="w-16 h-16 bg-[#28ac30] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg">
-                {item.step}
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-2 text-lg">
-                {item.title}
-              </h4>
-              <p className="text-gray-600">{item.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-    </>
-  );
-}
-
-function CTAAuthenticated() {
-  return (
-    <section className="bg-gradient-to-r from-[#28ac30] to-[#1f8a26] rounded-2xl p-8 md:p-12 text-center text-white shadow-xl">
-      <h3 className="text-3xl font-bold mb-4">Ready to start learning?</h3>
-      <p className="text-xl text-green-100 mb-6 max-w-2xl mx-auto">
-        Join thousands of engineers advancing their careers with world-class
-        courses and expert instruction.
-      </p>
-      <Link
-        href="/all-courses"
-        className="inline-block px-8 py-3 bg-white text-[#28ac30] rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-      >
-        Start Learning Today
-      </Link>
+    <section className="py-16">
+      <h3 className="text-3xl font-bold text-center mb-12">Why Build on Ethos Talentspace?</h3>
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {features.map((f, i) => (
+          <div key={i} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <f.icon className="w-12 h-12 text-blue-600 mb-4" />
+            <h4 className="text-xl font-bold mb-2">{f.title}</h4>
+            <p className="text-gray-600 leading-relaxed">{f.description}</p>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
 
 function CTAUnauthenticated() {
   return (
-    <section className="bg-gradient-to-r from-[#28ac30] to-[#1f8a26] rounded-2xl p-8 md:p-12 text-center text-white shadow-xl">
-      <h3 className="text-3xl font-bold mb-4">Ready to start learning?</h3>
-      <p className="text-xl text-green-100 mb-6 max-w-2xl mx-auto">
-        Join thousands of engineers advancing their careers with world-class
-        courses and expert instruction.
-      </p>
-      <SignUpButton mode="modal" forceRedirectUrl="/">
-        <Button className="px-8 py-3 bg-white text-[#28ac30] rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-          Get Started
-        </Button>
-      </SignUpButton>
+    <section className="bg-slate-900 rounded-3xl p-12 text-center text-white">
+      <h3 className="text-3xl font-bold mb-4">Ready to hire or get hired?</h3>
+      <p className="text-slate-400 mb-8 max-w-xl mx-auto">Join the decentralized workforce. Connect your wallet and start building your reputation today.</p>
+      <Link href="/sign-up" className="px-10 py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold transition-colors inline-block">
+        Connect Wallet
+      </Link>
     </section>
   );
 }
 
-async function getFeaturedProducts() {
+// --- DATA FETCHING ---
+
+async function getFeaturedServices() {
   "use cache";
   cacheTag(getProductGlobalTag());
-
   return db.query.ProductTable.findMany({
-    columns: {
-      id: true,
-      name: true,
-      description: true,
-      priceInNaira: true,
-      imageUrl: true,
-    },
     where: wherePublicProducts,
-    orderBy: asc(ProductTable.name),
     limit: 4,
-    with: {
-      category: true,
-    },
+    with: { category: true, owner: true },
   });
 }
 
-async function getCategories() {
+async function getFeaturedGigs() {
   "use cache";
-  cacheTag("categories");
-
-  return db.query.CategoryTable.findMany({
-    orderBy: asc(CategoryTable.name),
+  cacheTag("gigs");
+  return db.query.GigTable.findMany({
+    where: eq(GigTable.status, "open"),
+    limit: 3,
+    orderBy: desc(GigTable.createdAt),
+    with: { client: true },
   });
 }
 
-async function getUserStats(userId: string) {
+async function getMyServices(userId: string) {
   "use cache";
-  cacheTag(
-    getUserCourseAccessUserTag(userId),
-    getUserLessonCompleteUserTag(userId)
-  );
+  cacheTag(getProductGlobalTag(), `user-services-${userId}`);
+  return db.query.ProductTable.findMany({
+    where: eq(ProductTable.ownerId, userId),
+    orderBy: desc(ProductTable.createdAt),
+    with: { category: true, owner: true },
+  });
+}
 
-  const coursesEnrolled = await db
-    .select({ count: countDistinct(UserCourseAccessTable.courseId) })
-    .from(UserCourseAccessTable)
-    .where(eq(UserCourseAccessTable.userId, userId))
-    .then((result) => result[0]?.count || 0);
+async function getMyGigs(userId: string) {
+  "use cache";
+  cacheTag("gigs", `user-gigs-${userId}`);
+  return db.query.GigTable.findMany({
+    where: eq(GigTable.clientId, userId),
+    orderBy: desc(GigTable.createdAt),
+    with: { client: true },
+  });
+}
 
-  const completedLessons = await db
-    .select({ count: countDistinct(UserLessonCompleteTable.lessonId) })
-    .from(UserLessonCompleteTable)
-    .where(eq(UserLessonCompleteTable.userId, userId))
-    .then((result) => result[0]?.count || 0);
+async function getBrowseServices(userId: string) {
+  "use cache";
+  cacheTag(getProductGlobalTag());
+  return db.query.ProductTable.findMany({
+    where: and(
+      wherePublicProducts,
+      ne(ProductTable.ownerId, userId)
+    ),
+    limit: 6,
+    orderBy: desc(ProductTable.createdAt),
+    with: { category: true, owner: true },
+  });
+}
 
-  const hoursLearned = Math.round((completedLessons * 15) / 60);
+async function getBrowseGigs(userId: string) {
+  "use cache";
+  cacheTag("gigs");
+  return db.query.GigTable.findMany({
+    where: and(
+      eq(GigTable.status, "open"),
+      ne(GigTable.clientId, userId)
+    ),
+    limit: 6,
+    orderBy: desc(GigTable.createdAt),
+    with: { client: true },
+  });
+}
 
-  const coursesProgress = await db
-    .select({
-      courseId: CourseTable.id,
-      totalLessons: countDistinct(LessonTable.id),
-      completedLessons: countDistinct(UserLessonCompleteTable.lessonId),
-    })
-    .from(CourseTable)
-    .innerJoin(
-      UserCourseAccessTable,
-      and(
-        eq(UserCourseAccessTable.courseId, CourseTable.id),
-        eq(UserCourseAccessTable.userId, userId)
-      )
-    )
-    .leftJoin(
-      CourseSectionTable,
-      and(
-        eq(CourseSectionTable.courseId, CourseTable.id),
-        wherePublicCourseSections
-      )
-    )
-    .leftJoin(
-      LessonTable,
-      and(eq(LessonTable.sectionId, CourseSectionTable.id), wherePublicLessons)
-    )
-    .leftJoin(
-      UserLessonCompleteTable,
-      and(
-        eq(UserLessonCompleteTable.lessonId, LessonTable.id),
-        eq(UserLessonCompleteTable.userId, userId)
-      )
-    )
-    .groupBy(CourseTable.id);
+// ... (previous helper functions)
 
-  const certificates = coursesProgress.filter(
-    (course) =>
-      course.totalLessons > 0 && course.completedLessons === course.totalLessons
-  ).length;
+// --- DATA FETCHING ---
+// ... (previous fetch functions: getFeaturedServices, getFeaturedGigs, getMyServices, getMyGigs, getBrowseServices, getBrowseGigs)
 
-  const avgProgress =
-    coursesProgress.length > 0
-      ? Math.round(
-          coursesProgress.reduce((sum, course) => {
-            const progress =
-              course.totalLessons > 0
-                ? (course.completedLessons / course.totalLessons) * 100
-                : 0;
-            return sum + progress;
-          }, 0) / coursesProgress.length
-        )
-      : 0;
+import { getMyDeals } from "@/features/dashboard/db/deals"
+
+async function getDashboardStats(userId: string) {
+  const [myServices, myGigs, deals] = await Promise.all([
+    db.query.ProductTable.findMany({
+      where: eq(ProductTable.ownerId, userId),
+      columns: { id: true },
+    }),
+    db.query.GigTable.findMany({
+      where: eq(GigTable.clientId, userId),
+      columns: { id: true },
+    }),
+    getMyDeals(userId)
+  ]);
+
+  const activeDealsCount = deals.asTalent.length + deals.asClient.length
 
   return {
-    coursesEnrolled,
-    hoursLearned,
-    certificates,
-    avgProgress,
+    myServicesCount: myServices.length,
+    myGigsCount: myGigs.length,
+    incomingRequests: 0,
+    activeDeals: activeDealsCount,
+    totalEarnings: 0,
   };
-}
-
-async function getUserCoursesForHomepage(userId: string) {
-  "use cache";
-  cacheTag(
-    getUserCourseAccessUserTag(userId),
-    getUserLessonCompleteUserTag(userId)
-  );
-
-  const courses = await db
-    .select({
-      id: CourseTable.id,
-      name: CourseTable.name,
-      description: CourseTable.description,
-      sectionsCount: countDistinct(CourseSectionTable.id),
-      lessonsCount: countDistinct(LessonTable.id),
-      lessonsComplete: countDistinct(UserLessonCompleteTable.lessonId),
-    })
-    .from(CourseTable)
-    .innerJoin(
-      UserCourseAccessTable,
-      and(
-        eq(UserCourseAccessTable.courseId, CourseTable.id),
-        eq(UserCourseAccessTable.userId, userId)
-      )
-    )
-    .leftJoin(
-      CourseSectionTable,
-      and(
-        eq(CourseSectionTable.courseId, CourseTable.id),
-        wherePublicCourseSections
-      )
-    )
-    .leftJoin(
-      LessonTable,
-      and(eq(LessonTable.sectionId, CourseSectionTable.id), wherePublicLessons)
-    )
-    .leftJoin(
-      UserLessonCompleteTable,
-      and(
-        eq(UserLessonCompleteTable.lessonId, LessonTable.id),
-        eq(UserLessonCompleteTable.userId, userId)
-      )
-    )
-    .orderBy(CourseTable.name)
-    .groupBy(CourseTable.id)
-    .limit(3);
-
-  courses.forEach((course) => {
-    cacheTag(
-      getCourseIdTag(course.id),
-      getCourseSectionCourseTag(course.id),
-      getLessonCourseTag(course.id)
-    );
-  });
-
-  return courses;
-}
-
-function StatsAndCoursesSkeleton() {
-  return (
-    <div className="space-y-16">
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-32 bg-gray-100 rounded-xl animate-pulse" />
-        ))}
-      </section>
-      <section>
-        <div className="h-8 w-48 bg-gray-100 mb-8 rounded animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-64 bg-gray-100 rounded-xl animate-pulse"
-            />
-          ))}
-        </div>
-      </section>
-    </div>
-  );
 }

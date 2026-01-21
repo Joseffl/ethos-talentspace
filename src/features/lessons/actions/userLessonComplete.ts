@@ -1,6 +1,6 @@
 "use server"
 
-import { getCurrentUser } from "@/services/clerk"
+import { getCurrentUser } from "@/services/privy"
 import { canUpdateUserLessonCompleteStatus } from "../permissions/userLessonComplete"
 import { updateLessonCompleteStatus as updateLessonCompleteStatusDb } from "../db/userLessonComplete"
 

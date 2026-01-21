@@ -1,137 +1,52 @@
-// import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-// import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
-// const isPublicRoute = createRouteMatcher([
-//   "/",
-//   "/sign-in(.*)",
-//   "/sign-up(.*)",
-//   "/api(.*)",
-//   "/courses/:courseId/lessons/:lessonId",
-//   "/products(.*)",
-// ]);
-
-// const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
-
-// export default clerkMiddleware(async (auth, req) => {
-//   if (isAdminRoute(req)) {
-//     const user = await auth.protect();
-//     if (user.sessionClaims.role !== "admin") {
-//       return new NextResponse(null, { status: 404 });
-//     }
-//   }
-
-//   if (!isPublicRoute(req)) {
-//     await auth.protect();
-//   }
-
-//   return NextResponse.next();
-// });
-
-// export const config = {
-//   matcher: [
-//     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-//     "/(api|trpc)(.*)",
-//   ],
-// };
-
-
-// import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-// import { NextResponse } from "next/server";
-
-// const isPublicRoute = createRouteMatcher([
-//   "/",
-//   "/sign-in(.*)",
-//   "/sign-up(.*)",
-//   "/api/webhooks(.*)", 
-//   "/courses/:courseId/lessons/:lessonId",
-//   "/products(.*)",
-// ]);
-
-// export default clerkMiddleware(async (auth, req) => {
-//   const url = req.nextUrl;
-//   const hostname = req.headers.get("host") || "";
-
-//   if (hostname === "admin.magsengineeringlimited.com") {
-//     const { sessionClaims } = await auth();
-    
-//     if (sessionClaims?.role !== "admin") {
-//       return new NextResponse("Not Found", { status: 404 });
-//     }
-
-//     if (!url.pathname.startsWith("/admin")) {
-//       const adminUrl = new URL(`/admin${url.pathname === "/" ? "" : url.pathname}`, req.url);
-//       return NextResponse.rewrite(adminUrl);
-//     }
-    
-//     return NextResponse.next();
-//   }
-
-//   if (!isPublicRoute(req)) {
-//     await auth.protect();
-//   }
-
-//   return NextResponse.next();
-// });
-
-// export const config = {
-//   matcher: [
-//     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-//     "/(api|trpc)(.*)",
-//   ],
-// };
-
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-
-const isPublicRoute = createRouteMatcher([
+// Use the lightweight privy-token check for middleware 
+// to avoid heavy JWKS fetching on every single request
+const publicRoutes = [
   "/",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/api/webhooks(.*)", 
-  "/courses/:courseId/lessons/:lessonId",
-  "/products(.*)",
-]);
+  "/sign-in",
+  "/sign-up",
+  "/api/webhooks",
+  "/explore", // Added based on your Navbar
+  "/how-it-works",
+]
 
-export default clerkMiddleware(async (auth, req) => {
-  const url = req.nextUrl;
-  const hostname = req.headers.get("host") || "";
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const authToken = request.cookies.get("privy-token")?.value
 
-  // 1. Handle Admin Subdomain Logic
-  if (hostname === "admin.magsengineeringlimited.com") {
-    const { userId, sessionClaims, redirectToSignIn } = await auth();
+  // 1. Check if the route is public
+  const isPublic = publicRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  )
 
-    // If NOT logged in, send them to the login page
-    if (!userId) {
-      return redirectToSignIn({ returnBackUrl: req.url });
-    }
-    
-    // If logged in but NOT an admin, show 404
-    // Note: sessionClaims.role is available due to your typeOverrides
-    if (sessionClaims?.role !== "admin") {
-      return new NextResponse("Not Found", { status: 404 });
-    }
-
-    // Rewrite logic: ensures 'admin.example.com/dashboard' maps to '/admin/dashboard'
-    if (!url.pathname.startsWith("/admin")) {
-      const adminPath = url.pathname === "/" ? "" : url.pathname;
-      const adminUrl = new URL(`/admin${adminPath}`, req.url);
-      return NextResponse.rewrite(adminUrl);
-    }
-    
-    return NextResponse.next();
+  // 2. If it's a public route, let them through regardless of auth
+  if (isPublic) {
+    return NextResponse.next()
   }
 
-  // 2. Handle Protection for Main Domain/Dashboard
-  if (!isPublicRoute(req)) {
-    await auth.protect();
+  // 3. If NOT a public route and NO token exists, redirect to home
+  if (!authToken) {
+    const searchParams = new URLSearchParams(request.nextUrl.search)
+    searchParams.set("unauthorized", "true")
+    return NextResponse.redirect(new URL(`/?${searchParams.toString()}`, request.url))
   }
 
-  return NextResponse.next();
-});
+  // 4. Token exists, let it pass to Server Components.
+  // We do the HEAVY verification in 'getCurrentUser' (Server Component) 
+  // rather than Middleware to keep edge execution fast and prevent JWKS timeouts.
+  return NextResponse.next()
+}
 
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
-};
+}

@@ -1,5 +1,5 @@
 // import { NextRequest, NextResponse } from "next/server";
-// import { getCurrentUser } from "@/services/clerk";
+// import { getCurrentUser } from "@/services/privy";
 // import { canCreateCourses } from "@/features/courses/permissions/courses";
 // import { uploadToR2, generateStorageKey } from "@/lib/r2";
 
@@ -85,7 +85,7 @@
 // }
 
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/services/clerk";
+import { getCurrentUser } from "@/services/privy";
 import { canCreateCourses } from "@/features/courses/permissions/courses";
 import { r2Client, generateStorageKey } from "@/lib/r2";
 import { PutObjectCommand } from "@aws-sdk/client-s3";

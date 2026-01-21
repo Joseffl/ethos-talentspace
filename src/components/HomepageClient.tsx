@@ -61,7 +61,7 @@ export function HomePageClient({
             placeholder="Search for courses..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28ac30] focus:border-transparent shadow-sm"
+            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent shadow-sm"
           />
         </div>
       </section>
@@ -73,7 +73,7 @@ export function HomePageClient({
           </h3>
           <a
             href="#"
-            className="text-[#28ac30] font-semibold hover:text-[#229a28] flex items-center gap-1"
+            className="text-[#2563EB] font-semibold hover:text-[#1D4ED8] flex items-center gap-1"
           >
             View all <ChevronRight className="w-4 h-4" />
           </a>
@@ -88,7 +88,7 @@ export function HomePageClient({
           </p>
           <Link 
             href="/all-courses"
-            className="inline-block px-6 py-2 bg-[#28ac30] text-white rounded-lg hover:bg-[#229a28] transition-colors"
+            className="inline-block px-6 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
           >
             Browse Courses
           </Link>
@@ -130,13 +130,13 @@ export function HomePageClient({
 
       
 
-      <section className="bg-gradient-to-r from-[#28ac30] to-[#1f8a26] rounded-2xl p-8 md:p-12 text-center text-white">
+      <section className="bg-gradient-to-r from-[#2563EB] to-[#1E40AF] rounded-2xl p-8 md:p-12 text-center text-white">
         <h3 className="text-3xl font-bold mb-4">Ready to start Learning?</h3>
-        <p className="text-xl text-green-100 mb-6 max-w-2xl mx-auto">
+        <p className="text-xl text-blue-100 mb-6 max-w-2xl mx-auto">
           Learn from industry experts with thousands of students worldwide and
           get positioned for your next career move.
         </p>
-        <button className="px-8 py-3 bg-white text-[#28ac30] rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+        <button className="px-8 py-3 bg-white text-[#2563EB] rounded-lg font-semibold hover:bg-gray-100 transition-colors">
           Start Learning Today
         </button>
       </section>

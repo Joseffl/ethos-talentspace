@@ -14,10 +14,10 @@ import { PurchaseTable } from "@/drizzle/schema"
 import { getPurchaseIdTag } from "@/features/purchases/db/cache"
 import { formatDate, formatPrice } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
-import { getCurrentUser } from "@/services/clerk"
+import { getCurrentUser } from "@/services/privy"
 import { and, eq } from "drizzle-orm"
 import { cacheTag } from "next/dist/server/use-cache/cache-tag"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { Fragment, Suspense } from "react"
 
 export default async function PurchasePage({
@@ -37,10 +37,10 @@ export default async function PurchasePage({
 }
 
 async function SuspenseBoundary({ purchaseId }: { purchaseId: string }) {
-  const { userId, redirectToSignIn, user } = await getCurrentUser({
+  const { userId, user } = await getCurrentUser({
     allData: true,
   })
-  if (userId == null || user == null) return redirectToSignIn()
+  if (userId == null || user == null) redirect("/sign-in")
 
   const purchase = await getPurchase({ userId, id: purchaseId })
 
@@ -82,16 +82,18 @@ async function SuspenseBoundary({ purchaseId }: { purchaseId: string }) {
           </div>
           <div>
             <label className="text-sm text-muted-foreground">Seller</label>
-            <div>Mags Engineering Limited</div>
+            <div>Ethos Talentspace</div>
           </div>
-          <div>
-            <label className="text-sm text-muted-foreground">
-              Transaction ID
-            </label>
-            <div className="font-mono text-sm">
-              {purchase.flutterwaveTransactionId}
+          {purchase.transactionHash && (
+            <div>
+              <label className="text-sm text-muted-foreground">
+                Transaction Hash
+              </label>
+              <div className="font-mono text-sm">
+                {purchase.transactionHash}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
         <CardFooter className="grid grid-cols-2 gap-y-4 gap-x-8 border-t pt-4">
           {pricingRows.map(({ label, amountInDollars, isBold }) => (
@@ -118,7 +120,7 @@ async function getPurchase({ userId, id }: { userId: string; id: string }) {
       refundedAt: true,
       productDetails: true,
       createdAt: true,
-      flutterwaveTransactionId: true,
+      transactionHash: true,
     },
     where: and(eq(PurchaseTable.id, id), eq(PurchaseTable.userId, userId)),
   })
