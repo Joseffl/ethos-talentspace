@@ -14,9 +14,7 @@ export function PrivyProvider({ children }: { children: React.ReactNode }) {
           showWalletLoginFirst: true,
         },
         loginMethods: ["wallet", "email", "google", "twitter"],
-        embeddedWallets: {
-          createOnLogin: "users-without-wallets",
-        },
+        
       }}
     >
       {children}
