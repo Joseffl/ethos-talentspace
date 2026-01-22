@@ -96,6 +96,21 @@ export async function getCurrentUser({ allData = false } = {}) {
         .returning()
 
       dbUser = newUser
+    } else {
+      // User exists - update wallet address if we have one from Privy and it's different from DB
+      if (walletAddress && dbUser.walletAddress !== walletAddress) {
+        console.log(`[Privy] Syncing wallet address for user ${dbUser.id}: ${dbUser.walletAddress} -> ${walletAddress}`)
+        const [updatedUser] = await db
+          .update(UserTable)
+          .set({
+            walletAddress,
+            updatedAt: new Date()
+          })
+          .where(eq(UserTable.id, dbUser.id))
+          .returning()
+
+        dbUser = updatedUser
+      }
     }
 
 

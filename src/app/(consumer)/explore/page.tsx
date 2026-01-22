@@ -68,7 +68,7 @@ async function ExploreContent({ filters }: { filters: FilterParams }) {
   }
 
   return (
-    <Tabs defaultValue="services" className="space-y-8">
+    <Tabs defaultValue="gigs" className="space-y-8">
       <TabsList className="bg-gray-100 p-1 rounded-xl w-full sm:w-auto flex overflow-x-auto">
         <TabsTrigger value="gigs" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 py-2 flex-1 sm:flex-none">
           <Briefcase className="w-4 h-4 mr-2" />

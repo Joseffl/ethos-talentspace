@@ -114,6 +114,8 @@ export async function getEthosProfileByAddress(
     address: string
 ): Promise<EthosProfileData | null> {
     try {
+        console.log(`[Ethos] Fetching profile for address: ${address}`);
+
         const response = await fetch(`${ETHOS_API_BASE}/profiles`, {
             method: "POST",
             headers: {
@@ -127,14 +129,21 @@ export async function getEthosProfileByAddress(
         });
 
         if (!response.ok) {
-            console.error("Ethos API error:", response.status, response.statusText);
+            const errorText = await response.text();
+            console.error(`[Ethos] API error for ${address}:`, response.status, response.statusText, errorText);
             return null;
         }
 
         const data: EthosProfilesResponse = await response.json();
+        console.log(`[Ethos] Response for ${address}:`, {
+            total: data.total,
+            hasProfile: !!data.values[0],
+            score: data.values[0]?.user?.score
+        });
+
         return data.values[0] || null;
     } catch (error) {
-        console.error("Failed to fetch Ethos profile:", error);
+        console.error(`[Ethos] Failed to fetch profile for ${address}:`, error);
         return null;
     }
 }

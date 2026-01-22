@@ -1,8 +1,8 @@
 import { notFound, redirect } from "next/navigation"
-import { getGigForApplication, checkUserReputationEligibility } from "./actions"
+import { getGigForApplication } from "./actions"
 import { GigApplicationForm } from "./GigApplicationForm"
-import { ReputationGateWarning } from "./ReputationGateWarning"
 import { getCurrentUser } from "@/services/privy"
+import type { ReputationCriteria } from "@/lib/ethos"
 
 interface ApplyPageProps {
     params: Promise<{ id: string }>
@@ -30,32 +30,22 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
         redirect(`/gigs/${id}`)
     }
 
-    // Check reputation eligibility
-    const eligibility = await checkUserReputationEligibility(id)
+    // Get reputation criteria for display (not enforcement)
+    const reputationCriteria = gig.reputationCriteria as ReputationCriteria | null
 
     return (
         <div className="container py-8">
-            {!eligibility.eligible && eligibility.criteria ? (
-                <ReputationGateWarning
-                    gigId={id}
-                    gigTitle={gig.title}
-                    criteria={eligibility.criteria}
-                    reasons={eligibility.reasons}
-                    reputation={eligibility.reputation}
-                />
-            ) : (
-                <GigApplicationForm
-                    gig={{
-                        id: gig.id,
-                        title: gig.title,
-                        description: gig.description,
-                        budgetMin: gig.budgetMin,
-                        budgetMax: gig.budgetMax,
-                        skillTags: gig.skillTags,
-                    }}
-                    reputationCriteria={eligibility.criteria}
-                />
-            )}
+            <GigApplicationForm
+                gig={{
+                    id: gig.id,
+                    title: gig.title,
+                    description: gig.description,
+                    budgetMin: gig.budgetMin,
+                    budgetMax: gig.budgetMax,
+                    skillTags: gig.skillTags,
+                }}
+                reputationCriteria={reputationCriteria}
+            />
         </div>
     )
 }

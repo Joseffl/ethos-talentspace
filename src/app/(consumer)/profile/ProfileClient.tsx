@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { EthosReputationCard } from "@/components/EthosReputationCard"
 import { updateProfileAction } from "@/features/users/actions/users"
+import { syncWalletAddress } from "./actions"
 import {
     User,
     Wallet,
@@ -130,6 +131,13 @@ export function ProfileClient({ initialData }: { initialData: ProfileData }) {
         setIsLinkingWallet(true)
         try {
             await linkWallet()
+
+            // Sync wallet address to database
+            const syncResult = await syncWalletAddress()
+            if (syncResult.error) {
+                console.error("Failed to sync wallet:", syncResult.message)
+            }
+
             toast.success("Wallet linked!")
             router.refresh()
         } catch {
