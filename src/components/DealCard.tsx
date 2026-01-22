@@ -2,12 +2,24 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatPrice } from "@/lib/formatters"
-import { Calendar, User, Briefcase, MessageSquare } from "lucide-react"
+import { User, Briefcase, Clock, CheckCircle, Send } from "lucide-react"
 import Link from "next/link"
 
 interface DealCardProps {
     role: "talent" | "client"
     deal: any // Using specific type would be better but keeping simple for now
+}
+
+function getStatusConfig(status: string) {
+    switch (status) {
+        case "completed":
+            return { label: "Completed", className: "bg-green-100 text-green-800", icon: CheckCircle }
+        case "submitted":
+            return { label: "Submitted", className: "bg-amber-100 text-amber-800", icon: Send }
+        case "in_progress":
+        default:
+            return { label: "In Progress", className: "bg-blue-100 text-blue-800", icon: Clock }
+    }
 }
 
 export function DealCard({ role, deal }: DealCardProps) {
@@ -20,9 +32,12 @@ export function DealCard({ role, deal }: DealCardProps) {
     const title = deal.gig.title
     const amount = deal.proposedBudget || deal.gig.budgetMin
     const date = new Date(deal.updatedAt).toLocaleDateString()
+    const status = deal.gig.status
+    const statusConfig = getStatusConfig(status)
+    const StatusIcon = statusConfig.icon
 
     return (
-        <Card>
+        <Card className={status === "submitted" && isClient ? "border-amber-200 bg-amber-50/30" : ""}>
             <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                     <div className="flex items-center gap-4">
@@ -34,11 +49,17 @@ export function DealCard({ role, deal }: DealCardProps) {
                             )}
                         </div>
                         <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="font-bold text-lg">{title}</h3>
-                                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                                    Active
+                                <Badge variant="secondary" className={statusConfig.className}>
+                                    <StatusIcon className="w-3 h-3 mr-1" />
+                                    {statusConfig.label}
                                 </Badge>
+                                {status === "submitted" && isClient && (
+                                    <Badge className="bg-amber-500 text-white animate-pulse">
+                                        Action Needed
+                                    </Badge>
+                                )}
                             </div>
                             <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                                 {isClient ? "Hired" : "Working for"} <span className="font-medium text-gray-900">{counterpartName}</span>

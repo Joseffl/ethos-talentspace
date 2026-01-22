@@ -47,7 +47,7 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
                         <div className="flex items-center gap-3 mb-2">
                             <h1 className="text-3xl font-bold text-gray-900">Active Deal</h1>
                             <Badge variant={isCompleted ? "secondary" : "default"} className={isCompleted ? "bg-green-100 text-green-800 hover:bg-green-100" : "bg-blue-600 hover:bg-blue-700"}>
-                                {isCompleted ? "Completed" : "In Progress"}
+                                {isCompleted ? "Completed" : gig.status === "submitted" ? "Submitted" : "In Progress"}
                             </Badge>
                         </div>
                         <h2 className="text-xl text-gray-600 font-medium flex items-center gap-2">
@@ -57,7 +57,7 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
                     </div>
                     <DealActions
                         gigId={gig.id}
-                        isCompleted={isCompleted}
+                        status={gig.status}
                         isFunded={!!gig.isFunded}
                         isClient={isClient}
                     />

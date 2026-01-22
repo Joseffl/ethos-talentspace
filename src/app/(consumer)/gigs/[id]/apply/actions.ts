@@ -1,10 +1,11 @@
 "use server"
 
 import { db } from "@/drizzle/db"
-import { GigApplicationTable, GigTable } from "@/drizzle/schema"
+import { GigApplicationTable, GigTable, UserTable } from "@/drizzle/schema"
 import { getCurrentUser } from "@/services/privy"
 import { revalidatePath } from "next/cache"
 import { eq, and } from "drizzle-orm"
+import { getEthosReputation, meetsReputationCriteria, type ReputationCriteria } from "@/lib/ethos"
 
 export async function submitGigApplication(formData: FormData) {
     const { userId } = await getCurrentUser()
@@ -48,6 +49,33 @@ export async function submitGigApplication(formData: FormData) {
         // Check if user is the gig owner
         if (gig.clientId === userId) {
             return { error: true, message: "You cannot apply to your own gig" }
+        }
+
+        // Check reputation criteria if the gig has any
+        const reputationCriteria = gig.reputationCriteria as ReputationCriteria | null
+        if (reputationCriteria && Object.keys(reputationCriteria).length > 0) {
+            // Get user's wallet address
+            const user = await db.query.UserTable.findFirst({
+                where: eq(UserTable.id, userId),
+            })
+
+            if (!user?.walletAddress) {
+                return {
+                    error: true,
+                    message: "This gig requires reputation verification. Please connect a wallet to your account."
+                }
+            }
+
+            // Fetch Ethos reputation
+            const reputation = await getEthosReputation(user.walletAddress)
+            const { meets, reasons } = meetsReputationCriteria(reputation, reputationCriteria)
+
+            if (!meets) {
+                return {
+                    error: true,
+                    message: `You don't meet the reputation requirements: ${reasons.join(", ")}`
+                }
+            }
         }
 
         // Check if user already applied
@@ -108,4 +136,52 @@ export async function getGigForApplication(gigId: string) {
     })
 
     return gig
+}
+
+export async function checkUserReputationEligibility(gigId: string) {
+    const { userId } = await getCurrentUser()
+
+    if (!userId) {
+        return { eligible: false, reasons: ["Not logged in"], reputation: null }
+    }
+
+    const gig = await db.query.GigTable.findFirst({
+        where: eq(GigTable.id, gigId),
+    })
+
+    if (!gig) {
+        return { eligible: false, reasons: ["Gig not found"], reputation: null }
+    }
+
+    const reputationCriteria = gig.reputationCriteria as ReputationCriteria | null
+
+    // No criteria means everyone is eligible
+    if (!reputationCriteria || Object.keys(reputationCriteria).length === 0) {
+        return { eligible: true, reasons: [], reputation: null, criteria: null }
+    }
+
+    // Get user's wallet address
+    const user = await db.query.UserTable.findFirst({
+        where: eq(UserTable.id, userId),
+    })
+
+    if (!user?.walletAddress) {
+        return {
+            eligible: false,
+            reasons: ["No wallet connected - required for reputation verification"],
+            reputation: null,
+            criteria: reputationCriteria
+        }
+    }
+
+    // Fetch Ethos reputation
+    const reputation = await getEthosReputation(user.walletAddress)
+    const { meets, reasons } = meetsReputationCriteria(reputation, reputationCriteria)
+
+    return {
+        eligible: meets,
+        reasons,
+        reputation,
+        criteria: reputationCriteria
+    }
 }

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation"
-import { getGigForApplication } from "./actions"
+import { getGigForApplication, checkUserReputationEligibility } from "./actions"
 import { GigApplicationForm } from "./GigApplicationForm"
+import { ReputationGateWarning } from "./ReputationGateWarning"
 import { getCurrentUser } from "@/services/privy"
 
 interface ApplyPageProps {
@@ -29,18 +30,32 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
         redirect(`/gigs/${id}`)
     }
 
+    // Check reputation eligibility
+    const eligibility = await checkUserReputationEligibility(id)
+
     return (
         <div className="container py-8">
-            <GigApplicationForm
-                gig={{
-                    id: gig.id,
-                    title: gig.title,
-                    description: gig.description,
-                    budgetMin: gig.budgetMin,
-                    budgetMax: gig.budgetMax,
-                    skillTags: gig.skillTags,
-                }}
-            />
+            {!eligibility.eligible && eligibility.criteria ? (
+                <ReputationGateWarning
+                    gigId={id}
+                    gigTitle={gig.title}
+                    criteria={eligibility.criteria}
+                    reasons={eligibility.reasons}
+                    reputation={eligibility.reputation}
+                />
+            ) : (
+                <GigApplicationForm
+                    gig={{
+                        id: gig.id,
+                        title: gig.title,
+                        description: gig.description,
+                        budgetMin: gig.budgetMin,
+                        budgetMax: gig.budgetMax,
+                        skillTags: gig.skillTags,
+                    }}
+                    reputationCriteria={eligibility.criteria}
+                />
+            )}
         </div>
     )
 }

@@ -1,12 +1,12 @@
 "use client"
 
 import { useAuth } from "@/hooks/useAuth"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { EthosReputationCard } from "@/components/EthosReputationCard"
 import { updateProfileAction } from "@/features/users/actions/users"
 import {
@@ -18,12 +18,40 @@ import {
     Check,
     Loader2,
     LinkIcon,
-    Unlink
+    Unlink,
+    Briefcase,
+    Star,
+    TrendingUp,
+    Calendar,
+    Edit3,
+    ShieldCheck
 } from "lucide-react"
 import { toast } from "sonner"
 
-export function ProfileClient({ initialName }: { initialName?: string }) {
+interface ProfileData {
+    name?: string
+    bio?: string
+    imageUrl?: string
+    averageRating?: number
+    reviewCount?: number
+    memberSince?: Date
+    twitter?: {
+        id: string
+        username: string
+        name: string
+        image?: string
+    }
+    stats?: {
+        gigsPosted: number
+        dealsCompletedAsClient: number
+        dealsCompletedAsTalent: number
+        activeDeals: number
+    }
+}
+
+export function ProfileClient({ initialData }: { initialData: ProfileData }) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const {
         isLoading,
         isAuthenticated,
@@ -31,26 +59,44 @@ export function ProfileClient({ initialName }: { initialName?: string }) {
         email,
         hasWallet,
         hasEmail,
-        hasTwitter,
-        twitterUsername,
-        twitterName,
-        twitterSubject,
         linkWallet,
-        linkTwitter,
-        unlinkTwitter,
         login,
     } = useAuth()
 
-    const [name, setName] = useState(initialName || "")
+    const [name, setName] = useState(initialData.name || "")
+    const [bio, setBio] = useState(initialData.bio || "")
+    const [isEditing, setIsEditing] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [isLinkingWallet, setIsLinkingWallet] = useState(false)
-    const [isLinkingTwitter, setIsLinkingTwitter] = useState(false)
+    const [isDisconnectingTwitter, setIsDisconnectingTwitter] = useState(false)
+
+    // Handle Twitter OAuth callback messages
+    useEffect(() => {
+        const twitterConnected = searchParams.get("twitter_connected")
+        const twitterError = searchParams.get("twitter_error")
+
+        if (twitterConnected === "true") {
+            toast.success("Twitter connected successfully!")
+            // Clean up URL
+            router.replace("/profile")
+        } else if (twitterError) {
+            const errorMessages: Record<string, string> = {
+                missing_params: "Twitter connection failed - missing parameters",
+                no_state: "Twitter connection failed - session expired",
+                invalid_state: "Twitter connection failed - invalid session",
+                token_error: "Twitter connection failed - token exchange error",
+                user_info_error: "Twitter connection failed - couldn't fetch user info",
+                callback_error: "Twitter connection failed - please try again",
+            }
+            toast.error(errorMessages[twitterError] || "Twitter connection failed")
+            router.replace("/profile")
+        }
+    }, [searchParams, router])
 
     useEffect(() => {
-        if (initialName) {
-            setName(initialName)
-        }
-    }, [initialName])
+        if (initialData.name) setName(initialData.name)
+        if (initialData.bio) setBio(initialData.bio)
+    }, [initialData])
 
     const handleSaveProfile = async () => {
         if (!name.trim()) {
@@ -62,6 +108,7 @@ export function ProfileClient({ initialName }: { initialName?: string }) {
         try {
             const formData = new FormData()
             formData.append("name", name.trim())
+            formData.append("bio", bio.trim())
 
             const result = await updateProfileAction(formData)
 
@@ -69,6 +116,7 @@ export function ProfileClient({ initialName }: { initialName?: string }) {
                 toast.error(result.message)
             } else {
                 toast.success("Profile updated!")
+                setIsEditing(false)
                 router.refresh()
             }
         } catch {
@@ -91,26 +139,28 @@ export function ProfileClient({ initialName }: { initialName?: string }) {
         }
     }
 
-    const handleLinkTwitter = async () => {
-        setIsLinkingTwitter(true)
-        try {
-            await linkTwitter()
-            toast.success("Twitter connected!")
-            router.refresh()
-        } catch {
-            // User cancelled or error
-        } finally {
-            setIsLinkingTwitter(false)
-        }
+    const handleConnectTwitter = () => {
+        // Redirect to Twitter OAuth flow
+        window.location.href = "/api/auth/twitter"
     }
 
-    const handleUnlinkTwitter = async () => {
+    const handleDisconnectTwitter = async () => {
+        setIsDisconnectingTwitter(true)
         try {
-            await unlinkTwitter(twitterSubject!)
-            toast.success("Twitter disconnected")
-            router.refresh()
+            const response = await fetch("/api/auth/twitter/disconnect", {
+                method: "POST",
+            })
+
+            if (response.ok) {
+                toast.success("Twitter disconnected")
+                router.refresh()
+            } else {
+                toast.error("Failed to disconnect Twitter")
+            }
         } catch {
             toast.error("Failed to disconnect Twitter")
+        } finally {
+            setIsDisconnectingTwitter(false)
         }
     }
 
@@ -140,189 +190,302 @@ export function ProfileClient({ initialName }: { initialName?: string }) {
         )
     }
 
+    // Use Twitter image from database if available
+    const imageUrl = initialData.twitter?.image || initialData.imageUrl
+    const totalDealsCompleted = (initialData.stats?.dealsCompletedAsClient || 0) + (initialData.stats?.dealsCompletedAsTalent || 0)
+    const hasTwitter = !!initialData.twitter
+
     return (
-        <div className="grid gap-6 md:grid-cols-2">
-            {/* Profile Info Card */}
-            <Card className="h-fit">
-                <CardHeader className="pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                        <User className="w-5 h-5 text-blue-600" />
-                        Profile Information
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {/* Name Input */}
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Display Name / Alias</Label>
-                        <div className="flex gap-2">
-                            <Input
-                                id="name"
-                                placeholder="Enter your name or alias"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="flex-1"
-                            />
-                            <Button
-                                onClick={handleSaveProfile}
-                                disabled={isSaving || !name.trim()}
-                                className="bg-blue-600 hover:bg-blue-700"
-                            >
-                                {isSaving ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+        <div className="space-y-6">
+            {/* Profile Header Card */}
+            <Card className="overflow-hidden">
+                <div className="bg-white h-18" />
+                <CardContent className="relative pt-0 pb-6">
+                    <div className="flex flex-col sm:flex-row gap-4 sm:items-end -mt-12">
+                        {/* Avatar */}
+                        <div className="w-24 h-24 rounded-full bg-white p-1 shadow-lg shrink-0">
+                            <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center overflow-hidden">
+                                {imageUrl ? (
+                                    <img src={imageUrl} alt={name} className="w-full h-full object-cover rounded-full" />
                                 ) : (
-                                    <Check className="w-4 h-4" />
+                                    <User className="w-10 h-10 text-blue-600" />
                                 )}
-                            </Button>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                            This is how others will see you on the platform
-                        </p>
-                    </div>
-
-                    {/* Email Display */}
-                    {hasEmail && (
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <Mail className="w-5 h-5 text-gray-500" />
-                            <div className="flex-1">
-                                <div className="text-xs text-gray-400">Email</div>
-                                <div className="text-sm font-medium text-gray-700">{email}</div>
                             </div>
-                            <Check className="w-4 h-4 text-green-500" />
                         </div>
-                    )}
 
-                    {/* Wallet Connection */}
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">Wallet Address</Label>
-                        {hasWallet ? (
-                            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                                <Wallet className="w-5 h-5 text-green-600" />
-                                <div className="flex-1">
-                                    <div className="font-mono text-sm text-gray-700">
-                                        {walletAddress?.slice(0, 10)}...{walletAddress?.slice(-8)}
+                        {/* Name & Bio */}
+                        <div className="flex-1 pt-2 sm:pt-6">
+                            {isEditing ? (
+                                <div className="space-y-3">
+                                    <Input
+                                        placeholder="Your display name"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        className="font-semibold text-lg"
+                                    />
+                                    <Textarea
+                                        placeholder="Write a short bio about yourself..."
+                                        value={bio}
+                                        onChange={(e) => setBio(e.target.value)}
+                                        className="resize-none"
+                                        rows={2}
+                                    />
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={handleSaveProfile}
+                                            disabled={isSaving || !name.trim()}
+                                            className="bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                                            Save
+                                        </Button>
+                                        <Button variant="outline" onClick={() => {
+                                            setIsEditing(false)
+                                            setName(initialData.name || "")
+                                            setBio(initialData.bio || "")
+                                        }}>
+                                            Cancel
+                                        </Button>
                                     </div>
                                 </div>
-                                <Check className="w-4 h-4 text-green-500" />
-                            </div>
-                        ) : (
-                            <Button
-                                variant="outline"
-                                className="w-full justify-start gap-2 h-12"
-                                onClick={handleLinkWallet}
-                                disabled={isLinkingWallet}
-                            >
-                                {isLinkingWallet ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    <Wallet className="w-5 h-5" />
-                                )}
-                                Connect Wallet
-                                <LinkIcon className="w-4 h-4 ml-auto text-gray-400" />
-                            </Button>
-                        )}
-                        <p className="text-xs text-gray-500">
-                            Connect a wallet to enable Ethos reputation features
-                        </p>
-                    </div>
-
-                    {/* Twitter Connection */}
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">Twitter Account</Label>
-                        {hasTwitter ? (
-                            <div className="flex items-center gap-3 p-3 bg-sky-50 rounded-lg border border-sky-200">
-                                <Twitter className="w-5 h-5 text-sky-500" />
-                                <div className="flex-1">
-                                    <div className="text-sm font-medium text-gray-700">
-                                        {twitterName || `@${twitterUsername}`}
+                            ) : (
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-2xl font-bold text-gray-900">{name || "Set your name"}</h2>
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                                            title="Edit profile"
+                                        >
+                                            <Edit3 className="w-4 h-4 text-gray-500" />
+                                        </button>
                                     </div>
-                                    {twitterName && twitterUsername && (
-                                        <div className="text-xs text-gray-500">@{twitterUsername}</div>
-                                    )}
+                                    <p className="text-gray-600 mt-1">
+                                        {bio || <span className="italic text-gray-400">No bio yet. Click edit to add one.</span>}
+                                    </p>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <a
-                                        href={`https://twitter.com/${twitterUsername}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="p-1.5 hover:bg-sky-100 rounded transition-colors"
-                                        title="View profile"
-                                    >
-                                        <ExternalLink className="w-4 h-4 text-sky-600" />
-                                    </a>
-                                    <button
-                                        onClick={handleUnlinkTwitter}
-                                        className="p-1.5 hover:bg-red-100 rounded transition-colors"
-                                        title="Disconnect"
-                                    >
-                                        <Unlink className="w-4 h-4 text-gray-400 hover:text-red-500" />
-                                    </button>
-                                </div>
+                            )}
+                        </div>
+
+                        {/* Quick Stats */}
+                        <div className="flex gap-4 sm:gap-6 pt-2 sm:pt-6">
+                            <div className="text-center">
+                                <div className="text-2xl font-bold text-gray-900">{totalDealsCompleted}</div>
+                                <div className="text-xs text-gray-500">Deals Done</div>
                             </div>
-                        ) : (
-                            <Button
-                                variant="outline"
-                                className="w-full justify-start gap-2 h-12 border-sky-200 hover:bg-sky-50"
-                                onClick={handleLinkTwitter}
-                                disabled={isLinkingTwitter}
-                            >
-                                {isLinkingTwitter ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    <Twitter className="w-5 h-5 text-sky-500" />
-                                )}
-                                <span className="text-gray-700">Connect Twitter</span>
-                                <LinkIcon className="w-4 h-4 ml-auto text-gray-400" />
-                            </Button>
-                        )}
-                        <p className="text-xs text-gray-500">
-                            Link your Twitter to let others discover and follow you
-                        </p>
+                            {(initialData.averageRating || 0) > 0 && (
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-1">
+                                        {initialData.averageRating?.toFixed(1)}
+                                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                                    </div>
+                                    <div className="text-xs text-gray-500">{initialData.reviewCount} reviews</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Ethos Reputation Card */}
-            <div>
-                {hasWallet && walletAddress ? (
-                    <EthosReputationCard address={walletAddress} />
-                ) : (
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <div className="bg-blue-100 p-1.5 rounded-full">
-                                    <Wallet className="w-4 h-4 text-blue-600" />
-                                </div>
-                                Ethos Reputation
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-center py-8">
-                            <div className="bg-gray-100 p-4 rounded-full w-fit mx-auto mb-4">
-                                <Wallet className="w-8 h-8 text-gray-400" />
+            <div className="grid gap-6 md:grid-cols-2">
+                {/* Stats Card */}
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-green-600" />
+                            Activity Overview
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-blue-50 rounded-lg p-4 text-center">
+                                <Briefcase className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                                <div className="text-2xl font-bold text-gray-900">{initialData.stats?.gigsPosted || 0}</div>
+                                <div className="text-xs text-gray-600">Gigs Posted</div>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                                Connect Wallet for Reputation
-                            </h3>
-                            <p className="text-sm text-gray-500 max-w-sm mx-auto mb-4">
-                                Link a wallet address to see your Ethos Network reputation score,
-                                reviews, and vouches.
-                            </p>
-                            <Button
-                                variant="outline"
+                            <div className="bg-green-50 rounded-lg p-4 text-center">
+                                <Check className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                                <div className="text-2xl font-bold text-gray-900">{initialData.stats?.dealsCompletedAsTalent || 0}</div>
+                                <div className="text-xs text-gray-600">Jobs Completed</div>
+                            </div>
+                            <div className="bg-amber-50 rounded-lg p-4 text-center">
+                                <TrendingUp className="w-6 h-6 text-amber-600 mx-auto mb-2" />
+                                <div className="text-2xl font-bold text-gray-900">{initialData.stats?.activeDeals || 0}</div>
+                                <div className="text-xs text-gray-600">Active Deals</div>
+                            </div>
+                            <div className="bg-purple-50 rounded-lg p-4 text-center">
+                                <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                                <div className="text-sm font-bold text-gray-900">
+                                    {initialData.memberSince
+                                        ? new Date(initialData.memberSince).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+                                        : "New"
+                                    }
+                                </div>
+                                <div className="text-xs text-gray-600">Member Since</div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Ethos Reputation Card */}
+                <div>
+                    {hasWallet && walletAddress ? (
+                        <EthosReputationCard address={walletAddress} />
+                    ) : (
+                        <Card className="h-full">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <ShieldCheck className="w-5 h-5 text-blue-600" />
+                                    Ethos Reputation
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex flex-col items-center justify-center py-8">
+                                <div className="bg-gradient-to-br from-blue-100 to-indigo-100 p-4 rounded-full mb-4">
+                                    <Wallet className="w-8 h-8 text-blue-600" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                                    Unlock Reputation Features
+                                </h3>
+                                <p className="text-sm text-gray-500 text-center max-w-xs mb-4">
+                                    Connect your wallet to see your on-chain reputation from Ethos Network.
+                                </p>
+                                <Button
+                                    onClick={handleLinkWallet}
+                                    disabled={isLinkingWallet}
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                    {isLinkingWallet ? (
+                                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                    ) : (
+                                        <Wallet className="w-4 h-4 mr-2" />
+                                    )}
+                                    Connect Wallet
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            </div>
+
+            {/* Connected Accounts Card */}
+            <Card>
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <LinkIcon className="w-5 h-5 text-gray-600" />
+                        Connected Accounts
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid sm:grid-cols-3 gap-4">
+                        {/* Email */}
+                        {hasEmail && (
+                            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border">
+                                <div className="bg-gray-100 p-2 rounded-full">
+                                    <Mail className="w-5 h-5 text-gray-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-xs text-gray-400 font-medium">Email</div>
+                                    <div className="text-sm font-medium text-gray-700 truncate">{email}</div>
+                                </div>
+                                <Check className="w-5 h-5 text-green-500 shrink-0" />
+                            </div>
+                        )}
+
+                        {/* Wallet */}
+                        {hasWallet ? (
+                            <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
+                                <div className="bg-green-100 p-2 rounded-full">
+                                    <Wallet className="w-5 h-5 text-green-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-xs text-green-600 font-medium">Wallet</div>
+                                    <div className="text-sm font-medium text-gray-700 font-mono truncate">
+                                        {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+                                    </div>
+                                </div>
+                                <Check className="w-5 h-5 text-green-500 shrink-0" />
+                            </div>
+                        ) : (
+                            <button
                                 onClick={handleLinkWallet}
                                 disabled={isLinkingWallet}
-                                className="gap-2"
+                                className="flex items-center gap-3 p-4 bg-white rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
                             >
-                                {isLinkingWallet ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <Wallet className="w-4 h-4" />
-                                )}
-                                Connect Wallet
-                            </Button>
-                        </CardContent>
-                    </Card>
-                )}
-            </div>
+                                <div className="bg-gray-100 p-2 rounded-full">
+                                    {isLinkingWallet ? (
+                                        <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                                    ) : (
+                                        <Wallet className="w-5 h-5 text-gray-400" />
+                                    )}
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <div className="text-sm font-medium text-gray-700">Connect Wallet</div>
+                                    <div className="text-xs text-gray-400">Enable reputation</div>
+                                </div>
+                                <LinkIcon className="w-4 h-4 text-gray-400 shrink-0" />
+                            </button>
+                        )}
+
+                        {/* Twitter - Using direct OAuth */}
+                        {hasTwitter ? (
+                            <div className="flex items-center gap-3 p-4 bg-sky-50 rounded-xl border border-sky-200">
+                                <div className="bg-sky-100 p-2 rounded-full overflow-hidden">
+                                    {initialData.twitter?.image ? (
+                                        <img
+                                            src={initialData.twitter.image}
+                                            alt={initialData.twitter.name}
+                                            className="w-5 h-5 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <Twitter className="w-5 h-5 text-sky-500" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-xs text-sky-600 font-medium">Twitter</div>
+                                    <div className="text-sm font-medium text-gray-700 truncate">
+                                        @{initialData.twitter?.username}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                    <a
+                                        href={`https://twitter.com/${initialData.twitter?.username}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 hover:bg-sky-100 rounded-full transition-colors"
+                                    >
+                                        <ExternalLink className="w-4 h-4 text-sky-600" />
+                                    </a>
+                                    <button
+                                        onClick={handleDisconnectTwitter}
+                                        disabled={isDisconnectingTwitter}
+                                        className="p-1.5 hover:bg-red-100 rounded-full transition-colors"
+                                    >
+                                        {isDisconnectingTwitter ? (
+                                            <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+                                        ) : (
+                                            <Unlink className="w-4 h-4 text-gray-400 hover:text-red-500" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={handleConnectTwitter}
+                                className="flex items-center gap-3 p-4 bg-white rounded-xl border-2 border-dashed border-gray-200 hover:border-sky-300 hover:bg-sky-50/50 transition-colors"
+                            >
+                                <div className="bg-gray-100 p-2 rounded-full">
+                                    <Twitter className="w-5 h-5 text-gray-400" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <div className="text-sm font-medium text-gray-700">Connect Twitter</div>
+                                    <div className="text-xs text-gray-400">Show your identity</div>
+                                </div>
+                                <LinkIcon className="w-4 h-4 text-gray-400 shrink-0" />
+                            </button>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     )
 }

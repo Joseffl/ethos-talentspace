@@ -20,9 +20,10 @@ import {
     FormDescription,
 } from "@/components/ui/form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, DollarSign, FileText, Link as LinkIcon, Plus, X, ArrowLeft, Send } from "lucide-react"
+import { Loader2, DollarSign, FileText, Link as LinkIcon, Plus, X, ArrowLeft, Send, ShieldCheck } from "lucide-react"
 import { submitGigApplication } from "./actions"
 import Link from "next/link"
+import type { ReputationCriteria } from "@/lib/ethos"
 
 const applicationSchema = z.object({
     coverLetter: z.string().min(50, "Cover letter must be at least 50 characters"),
@@ -41,9 +42,10 @@ interface GigApplicationFormProps {
         description: string
         skillTags?: string[] | null
     }
+    reputationCriteria?: ReputationCriteria | null
 }
 
-export function GigApplicationForm({ gig }: GigApplicationFormProps) {
+export function GigApplicationForm({ gig, reputationCriteria }: GigApplicationFormProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
 
@@ -105,6 +107,12 @@ export function GigApplicationForm({ gig }: GigApplicationFormProps) {
                     <h2 className="font-semibold text-blue-900 mb-1">{gig.title}</h2>
                     <p className="text-sm text-blue-700">Budget: {budgetDisplay}</p>
                 </div>
+                {reputationCriteria && Object.keys(reputationCriteria).length > 0 && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>You meet the reputation requirements for this gig</span>
+                    </div>
+                )}
             </div>
 
             <Form {...form}>

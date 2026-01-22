@@ -14,7 +14,7 @@ interface GigCardProps {
     deadline?: Date | string | null
     externalLinks?: string[] | null
     skillTags?: string[] | null
-    status: "open" | "in_progress" | "completed" | "cancelled"
+    status: "open" | "in_progress" | "submitted" | "completed" | "cancelled"
     client?: {
         id: string
         name: string
@@ -28,6 +28,15 @@ interface GigCardProps {
     } | null
     createdAt?: Date | string
     compact?: boolean
+}
+
+function getReputationTooltip(criteria?: GigCardProps["reputationCriteria"]) {
+    if (!criteria) return ""
+    const parts: string[] = []
+    if (criteria.minEthosScore) parts.push(`Min Score: ${criteria.minEthosScore}`)
+    if (criteria.minPositiveReviewPercent) parts.push(`Min Positive Reviews: ${criteria.minPositiveReviewPercent}%`)
+    if (criteria.minVouchCount) parts.push(`Min Vouches: ${criteria.minVouchCount}`)
+    return parts.join(" | ")
 }
 
 export function GigCard({
@@ -62,6 +71,7 @@ export function GigCard({
     const statusColors = {
         open: "bg-blue-100 text-blue-700",
         in_progress: "bg-blue-100 text-blue-700",
+        submitted: "bg-amber-100 text-amber-700",
         completed: "bg-gray-100 text-gray-700",
         cancelled: "bg-red-100 text-red-700",
     }
@@ -102,9 +112,9 @@ export function GigCard({
                         )}
                     </div>
                     {hasReputationRequirements && (
-                        <div className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1">
+                        <div className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1" title={getReputationTooltip(reputationCriteria)}>
                             <Shield className="w-3 h-3" />
-                            Score: {reputationCriteria?.minEthosScore}
+                            Rep Required
                         </div>
                     )}
                 </div>
@@ -125,6 +135,33 @@ export function GigCard({
                                 {tag}
                             </span>
                         ))}
+                    </div>
+                )}
+
+                {/* Reputation Requirements */}
+                {hasReputationRequirements && (
+                    <div className="bg-amber-50 rounded-lg p-2.5 border border-amber-100">
+                        <p className="text-[10px] font-semibold text-amber-700 mb-1.5 flex items-center gap-1">
+                            <Shield className="w-3 h-3" />
+                            Reputation Requirements
+                        </p>
+                        <div className="flex flex-wrap gap-2 text-[10px]">
+                            {reputationCriteria?.minEthosScore && (
+                                <span className="bg-white px-1.5 py-0.5 rounded border border-amber-200 text-amber-800">
+                                    Score: {reputationCriteria.minEthosScore}+
+                                </span>
+                            )}
+                            {reputationCriteria?.minPositiveReviewPercent && (
+                                <span className="bg-white px-1.5 py-0.5 rounded border border-amber-200 text-amber-800">
+                                    Reviews: {reputationCriteria.minPositiveReviewPercent}%+
+                                </span>
+                            )}
+                            {reputationCriteria?.minVouchCount && (
+                                <span className="bg-white px-1.5 py-0.5 rounded border border-amber-200 text-amber-800">
+                                    Vouches: {reputationCriteria.minVouchCount}+
+                                </span>
+                            )}
+                        </div>
                     </div>
                 )}
 

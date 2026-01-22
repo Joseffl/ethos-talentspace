@@ -3,7 +3,7 @@ import { pgTable, text, integer, pgEnum, uuid, jsonb, timestamp, boolean } from 
 import { createdAt, id, updatedAt } from "../schemaHelpers";
 import { UserTable } from "./user";
 
-export const gigStatuses = ["open", "in_progress", "completed", "cancelled"] as const
+export const gigStatuses = ["open", "in_progress", "submitted", "completed", "cancelled"] as const
 export type GigStatus = (typeof gigStatuses)[number]
 export const gigStatusEnum = pgEnum("gig_status", gigStatuses)
 

@@ -10,7 +10,6 @@ export function PrivyProvider({ children }: { children: React.ReactNode }) {
         appearance: {
           theme: "light",
           accentColor: "#2563EB",
-          logo: "/logo.png",
           showWalletLoginFirst: true,
         },
         loginMethods: ["wallet", "email", "google", "twitter"],

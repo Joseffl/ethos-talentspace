@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/drizzle/db"
-import { ReviewTable, GigApplicationTable, GigTable } from "@/drizzle/schema"
+import { ReviewTable, GigApplicationTable, GigTable, UserTable } from "@/drizzle/schema"
 import { eq, and } from "drizzle-orm"
 import { getCurrentUser } from "@/services/privy"
 import { revalidateTag } from "next/cache"
@@ -62,10 +62,30 @@ export async function submitReview(data: {
             authorId: userId,
             targetId,
             rating,
-            comment
+            comment,
+            createdAt: new Date(),
         })
 
+        // 6. Update User Stats (averageRating & reviewCount)
+        const reviews = await db.query.ReviewTable.findMany({
+            where: eq(ReviewTable.targetId, targetId),
+            columns: { rating: true }
+        })
+
+        const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0)
+        const newReviewCount = reviews.length
+        const newAverage = newReviewCount > 0 ? totalRating / newReviewCount : 0
+
+        await db.update(UserTable)
+            .set({
+                reviewCount: newReviewCount,
+                averageRating: newAverage,
+                updatedAt: new Date()
+            })
+            .where(eq(UserTable.id, targetId))
+
         revalidateTag("reviews")
+        revalidateTag("gigs") // Revalidate gigs to show updated reputed score if shown there
         return { success: true, message: "Review submitted successfully" }
 
     } catch (error) {

@@ -4,15 +4,21 @@ import { GigCard } from "@/components/GigCard"
 import { db } from "@/drizzle/db"
 import { cacheTag } from "next/dist/server/use-cache/cache-tag"
 import { getProductGlobalTag } from "@/features/products/db/cache"
-import { wherePublicProducts } from "@/features/products/permissions/products"
-import { GigTable } from "@/drizzle/schema"
-import { eq, desc } from "drizzle-orm"
+import { ProductTable, GigTable } from "@/drizzle/schema"
+import { eq, desc, and } from "drizzle-orm"
 import { Search, Briefcase, LayoutGrid } from "lucide-react"
 import { Suspense } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { ExploreFilters } from "./ExploreFilters"
 
-export default function ExplorePage() {
+interface FilterParams {
+  minEthosScore?: number
+  minRating?: number
+}
+
+export default async function ExplorePage({ searchParams }: { searchParams: Promise<FilterParams> }) {
+  const params = await searchParams
   return (
     <div className="container my-6">
       <PageHeader title="Explore Ethos" />
@@ -20,17 +26,26 @@ export default function ExplorePage() {
         Discover verified Web3 talent and services, or find open gigs to apply for.
         Your reputation is your resume.
       </p>
-      <Suspense fallback={<ExploreSkeleton />}>
-        <ExploreContent />
-      </Suspense>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        <aside className="lg:col-span-1">
+          <ExploreFilters />
+        </aside>
+
+        <main className="lg:col-span-3">
+          <Suspense fallback={<ExploreSkeleton />}>
+            <ExploreContent filters={params} />
+          </Suspense>
+        </main>
+      </div>
     </div>
   )
 }
 
-async function ExploreContent() {
+async function ExploreContent({ filters }: { filters: FilterParams }) {
   const [services, gigs] = await Promise.all([
-    getPublicServices(),
-    getPublicGigs()
+    getPublicServices(filters),
+    getPublicGigs(filters)
   ])
 
   const hasServices = services.length > 0
@@ -43,10 +58,10 @@ async function ExploreContent() {
           <Search className="w-10 h-10 text-[#2563EB]" />
         </div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-          Nothing to explore yet
+          No matches found
         </h2>
         <p className="text-gray-600 max-w-md">
-          Check back soon for new services and gigs!
+          Try adjusting your filters to see more results.
         </p>
       </div>
     )
@@ -65,13 +80,13 @@ async function ExploreContent() {
           Services
           {hasServices && <Badge variant="secondary" className="ml-2 bg-gray-200">{services.length}</Badge>}
         </TabsTrigger>
-        
+
       </TabsList>
 
       <TabsContent value="services" className="space-y-6">
         {!hasServices ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No services found.</p>
+            <p className="text-gray-500">No services match your filters.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -85,7 +100,7 @@ async function ExploreContent() {
       <TabsContent value="gigs" className="space-y-6">
         {!hasGigs ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No open gigs right now.</p>
+            <p className="text-gray-500">No open gigs match your filters.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -112,24 +127,44 @@ function ExploreSkeleton() {
   )
 }
 
-async function getPublicServices() {
+async function getPublicServices({ minEthosScore, minRating }: FilterParams) {
   "use cache"
   cacheTag(getProductGlobalTag())
 
-  return db.query.ProductTable.findMany({
-    where: wherePublicProducts,
+  const products = await db.query.ProductTable.findMany({
+    where: eq(ProductTable.status, "public"),
     orderBy: (products, { desc }) => desc(products.createdAt),
     with: { category: true, owner: true },
   })
+
+  return products.filter(p => {
+    if (!p.owner) return false
+    const score = p.owner.ethosScore ?? 0
+    const rating = p.owner.averageRating ?? 0
+
+    if (minEthosScore && score < minEthosScore) return false
+    if (minRating && rating < minRating) return false
+    return true
+  })
 }
 
-async function getPublicGigs() {
+async function getPublicGigs({ minEthosScore, minRating }: FilterParams) {
   "use cache"
   cacheTag("gigs")
 
-  return db.query.GigTable.findMany({
+  const gigs = await db.query.GigTable.findMany({
     where: eq(GigTable.status, "open"),
     orderBy: desc(GigTable.createdAt),
     with: { client: true },
+  })
+
+  return gigs.filter(g => {
+    if (!g.client) return false
+    const score = g.client.ethosScore ?? 0
+    const rating = g.client.averageRating ?? 0
+
+    if (minEthosScore && score < minEthosScore) return false
+    if (minRating && rating < minRating) return false
+    return true
   })
 }
